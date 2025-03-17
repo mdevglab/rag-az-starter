@@ -86,7 +86,7 @@ Once the local LLM server is running and serving an OpenAI-compatible endpoint, 
 azd env set USE_VECTORS false
 azd env set OPENAI_HOST local
 azd env set OPENAI_BASE_URL <your local endpoint>
-azd env set AZURE_OPENAI_CHATGPT_MODEL local-model-name
+azd env set AZURE_AI_CHAT_MODEL_NAME local-model-name
 ```
 
 Then restart the local development server.
@@ -109,7 +109,7 @@ For example, to point at a local Ollama server running the `llama3.1:8b` model:
 ```shell
 azd env set OPENAI_HOST local
 azd env set OPENAI_BASE_URL http://localhost:11434/v1
-azd env set AZURE_OPENAI_CHATGPT_MODEL llama3.1:8b
+azd env set AZURE_AI_CHAT_MODEL_NAME llama3.1:8b
 azd env set USE_VECTORS false
 ```
 

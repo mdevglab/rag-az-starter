@@ -76,8 +76,8 @@ def generate_ground_truth_ragas(num_questions=200, num_search_documents=None, kg
             openai_api_version=azure_openai_api_version,
             azure_endpoint=azure_endpoint,
             azure_ad_token_provider=azure_ad_token_provider,
-            azure_deployment=os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT"),
-            model=os.environ["AZURE_OPENAI_EMB_MODEL_NAME"],
+            azure_deployment=os.getenv("AZURE_AI_EMBED_DEPLOYMENT_NAME"),
+            model=os.environ["AZURE_AI_EMBED_MODEL_NAME"],
         )
     )
 

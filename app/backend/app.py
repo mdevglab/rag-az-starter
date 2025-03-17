@@ -418,17 +418,17 @@ async def setup_clients():
     AZURE_SEARCH_INDEX = os.environ["AZURE_SEARCH_INDEX"]
     # Shared by all OpenAI deployments
     OPENAI_HOST = os.getenv("OPENAI_HOST", "azure")
-    OPENAI_CHATGPT_MODEL = os.environ["AZURE_OPENAI_CHATGPT_MODEL"]
-    OPENAI_EMB_MODEL = os.getenv("AZURE_OPENAI_EMB_MODEL_NAME", "text-embedding-ada-002")
-    OPENAI_EMB_DIMENSIONS = int(os.getenv("AZURE_OPENAI_EMB_DIMENSIONS") or 1536)
+    OPENAI_CHATGPT_MODEL = os.environ["AZURE_AI_CHAT_MODEL_NAME"]
+    OPENAI_EMB_MODEL = os.getenv("AZURE_AI_EMBED_MODEL_NAME", "text-embedding-ada-002")
+    OPENAI_EMB_DIMENSIONS = int(os.getenv("AZURE_AI_EMBED_DIMENSIONS") or 1536)
     # Used with Azure OpenAI deployments
     AZURE_OPENAI_SERVICE = os.getenv("AZURE_OPENAI_SERVICE")
     AZURE_OPENAI_GPT4V_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT4V_DEPLOYMENT")
     AZURE_OPENAI_GPT4V_MODEL = os.environ.get("AZURE_OPENAI_GPT4V_MODEL")
-    AZURE_OPENAI_CHATGPT_DEPLOYMENT = (
-        os.getenv("AZURE_OPENAI_CHATGPT_DEPLOYMENT") if OPENAI_HOST.startswith("azure") else None
+    AZURE_AI_CHAT_DEPLOYMENT_NAME = (
+        os.getenv("AZURE_AI_CHAT_DEPLOYMENT_NAME") if OPENAI_HOST.startswith("azure") else None
     )
-    AZURE_OPENAI_EMB_DEPLOYMENT = os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT") if OPENAI_HOST.startswith("azure") else None
+    AZURE_AI_EMBED_DEPLOYMENT_NAME = os.getenv("AZURE_AI_EMBED_DEPLOYMENT_NAME") if OPENAI_HOST.startswith("azure") else None
     AZURE_OPENAI_CUSTOM_URL = os.getenv("AZURE_OPENAI_CUSTOM_URL")
     # https://learn.microsoft.com/azure/ai-services/openai/api-version-deprecation#latest-ga-api-release
     AZURE_OPENAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-10-21"
@@ -561,7 +561,7 @@ async def setup_clients():
             openai_model_name=OPENAI_EMB_MODEL,
             openai_service=AZURE_OPENAI_SERVICE,
             openai_custom_url=AZURE_OPENAI_CUSTOM_URL,
-            openai_deployment=AZURE_OPENAI_EMB_DEPLOYMENT,
+            openai_deployment=AZURE_AI_EMBED_DEPLOYMENT_NAME,
             openai_dimensions=OPENAI_EMB_DIMENSIONS,
             openai_api_version=AZURE_OPENAI_API_VERSION,
             openai_key=clean_key_if_exists(OPENAI_API_KEY),
@@ -652,9 +652,9 @@ async def setup_clients():
         openai_client=openai_client,
         auth_helper=auth_helper,
         chatgpt_model=OPENAI_CHATGPT_MODEL,
-        chatgpt_deployment=AZURE_OPENAI_CHATGPT_DEPLOYMENT,
+        chatgpt_deployment=AZURE_AI_CHAT_DEPLOYMENT_NAME,
         embedding_model=OPENAI_EMB_MODEL,
-        embedding_deployment=AZURE_OPENAI_EMB_DEPLOYMENT,
+        embedding_deployment=AZURE_AI_EMBED_DEPLOYMENT_NAME,
         embedding_dimensions=OPENAI_EMB_DIMENSIONS,
         sourcepage_field=KB_FIELDS_SOURCEPAGE,
         content_field=KB_FIELDS_CONTENT,
@@ -669,9 +669,9 @@ async def setup_clients():
         openai_client=openai_client,
         auth_helper=auth_helper,
         chatgpt_model=OPENAI_CHATGPT_MODEL,
-        chatgpt_deployment=AZURE_OPENAI_CHATGPT_DEPLOYMENT,
+        chatgpt_deployment=AZURE_AI_CHAT_DEPLOYMENT_NAME,
         embedding_model=OPENAI_EMB_MODEL,
-        embedding_deployment=AZURE_OPENAI_EMB_DEPLOYMENT,
+        embedding_deployment=AZURE_AI_EMBED_DEPLOYMENT_NAME,
         embedding_dimensions=OPENAI_EMB_DIMENSIONS,
         sourcepage_field=KB_FIELDS_SOURCEPAGE,
         content_field=KB_FIELDS_CONTENT,
@@ -696,7 +696,7 @@ async def setup_clients():
             gpt4v_deployment=AZURE_OPENAI_GPT4V_DEPLOYMENT,
             gpt4v_model=AZURE_OPENAI_GPT4V_MODEL,
             embedding_model=OPENAI_EMB_MODEL,
-            embedding_deployment=AZURE_OPENAI_EMB_DEPLOYMENT,
+            embedding_deployment=AZURE_AI_EMBED_DEPLOYMENT_NAME,
             embedding_dimensions=OPENAI_EMB_DIMENSIONS,
             sourcepage_field=KB_FIELDS_SOURCEPAGE,
             content_field=KB_FIELDS_CONTENT,
@@ -713,11 +713,11 @@ async def setup_clients():
             vision_endpoint=AZURE_VISION_ENDPOINT,
             vision_token_provider=token_provider,
             chatgpt_model=OPENAI_CHATGPT_MODEL,
-            chatgpt_deployment=AZURE_OPENAI_CHATGPT_DEPLOYMENT,
+            chatgpt_deployment=AZURE_AI_CHAT_DEPLOYMENT_NAME,
             gpt4v_deployment=AZURE_OPENAI_GPT4V_DEPLOYMENT,
             gpt4v_model=AZURE_OPENAI_GPT4V_MODEL,
             embedding_model=OPENAI_EMB_MODEL,
-            embedding_deployment=AZURE_OPENAI_EMB_DEPLOYMENT,
+            embedding_deployment=AZURE_AI_EMBED_DEPLOYMENT_NAME,
             embedding_dimensions=OPENAI_EMB_DIMENSIONS,
             sourcepage_field=KB_FIELDS_SOURCEPAGE,
             content_field=KB_FIELDS_CONTENT,
