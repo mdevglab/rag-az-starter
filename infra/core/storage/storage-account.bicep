@@ -12,11 +12,13 @@ param allowBlobPublicAccess bool = true
 param allowCrossTenantReplication bool = true
 param allowSharedKeyAccess bool = true
 param containers array = []
+param corsRules array = []
 param defaultToOAuthAuthentication bool = false
 param deleteRetentionPolicy object = {}
 @allowed([ 'AzureDnsZone', 'Standard' ])
 param dnsEndpointType string = 'Standard'
 param isHnsEnabled bool = false
+param files array = []
 param kind string = 'StorageV2'
 param minimumTlsVersion string = 'TLS1_2'
 param supportsHttpsTrafficOnly bool = true
@@ -25,6 +27,9 @@ param publicNetworkAccess string = 'Enabled'
 param sku object = { name: 'Standard_LRS' }
 @allowed([ 'None', 'AzureServices' ])
 param bypass string = 'AzureServices'
+param queues array = []
+param shareDeleteRetentionPolicy object = {}
+param tables array = []
 
 var networkAcls = (publicNetworkAccess == 'Enabled') ? {
   bypass: bypass
@@ -54,6 +59,9 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' = {
   resource blobServices 'blobServices' = if (!empty(containers)) {
     name: 'default'
     properties: {
+      cors: {
+        corsRules: corsRules
+      }
       deleteRetentionPolicy: deleteRetentionPolicy
     }
     resource container 'containers' = [for container in containers: {
@@ -62,6 +70,33 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' = {
         publicAccess: contains(container, 'publicAccess') ? container.publicAccess : 'None'
       }
     }]
+  }
+  resource fileServices 'fileServices' = if (!empty(files)) {
+    name: 'default'
+    properties: {
+      cors: {
+        corsRules: corsRules
+      }
+      shareDeleteRetentionPolicy: shareDeleteRetentionPolicy
+    }
+  }
+
+  resource queueServices 'queueServices' = if (!empty(queues)) {
+    name: 'default'
+    properties: {
+
+    }
+    resource queue 'queues' = [for queue in queues: {
+      name: queue.name
+      properties: {
+        metadata: {}
+      }
+    }]
+  }
+
+  resource tableServices 'tableServices' = if (!empty(tables)) {
+    name: 'default'
+    properties: {}
   }
 }
 

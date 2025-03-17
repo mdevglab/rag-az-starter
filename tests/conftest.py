@@ -249,9 +249,9 @@ envs = [
     },
     {
         "OPENAI_HOST": "azure",
-        "AZURE_OPENAI_SERVICE": "test-openai-service",
-        "AZURE_OPENAI_CHATGPT_DEPLOYMENT": "test-chatgpt",
-        "AZURE_OPENAI_EMB_DEPLOYMENT": "test-ada",
+        "AZURE_AISERVICES_NAME": "test-openai-service",
+        "AZURE_AI_CHAT_DEPLOYMENT_NAME": "test-chatgpt",
+        "AZURE_AI_EMBED_DEPLOYMENT_NAME": "test-ada",
         "USE_GPT4V": "true",
         "AZURE_OPENAI_GPT4V_MODEL": "gpt-4",
         "VISION_ENDPOINT": "https://testvision.cognitiveservices.azure.com/",
@@ -261,9 +261,9 @@ envs = [
 auth_envs = [
     {
         "OPENAI_HOST": "azure",
-        "AZURE_OPENAI_SERVICE": "test-openai-service",
-        "AZURE_OPENAI_CHATGPT_DEPLOYMENT": "test-chatgpt",
-        "AZURE_OPENAI_EMB_DEPLOYMENT": "test-ada",
+        "AZURE_AISERVICES_NAME": "test-openai-service",
+        "AZURE_AI_CHAT_DEPLOYMENT_NAME": "test-chatgpt",
+        "AZURE_AI_EMBED_DEPLOYMENT_NAME": "test-ada",
         "AZURE_USE_AUTHENTICATION": "true",
         "AZURE_USER_STORAGE_ACCOUNT": "test-user-storage-account",
         "AZURE_USER_STORAGE_CONTAINER": "test-user-storage-container",
@@ -277,9 +277,9 @@ auth_envs = [
 auth_public_envs = [
     {
         "OPENAI_HOST": "azure",
-        "AZURE_OPENAI_SERVICE": "test-openai-service",
-        "AZURE_OPENAI_CHATGPT_DEPLOYMENT": "test-chatgpt",
-        "AZURE_OPENAI_EMB_DEPLOYMENT": "test-ada",
+        "AZURE_AISERVICES_NAME": "test-openai-service",
+        "AZURE_AI_CHAT_DEPLOYMENT_NAME": "test-chatgpt",
+        "AZURE_AI_EMBED_DEPLOYMENT_NAME": "test-ada",
         "AZURE_USE_AUTHENTICATION": "true",
         "AZURE_ENABLE_GLOBAL_DOCUMENT_ACCESS": "true",
         "AZURE_ENABLE_UNAUTHENTICATED_ACCESS": "true",
@@ -307,7 +307,7 @@ def mock_env(monkeypatch, request):
         monkeypatch.setenv("AZURE_SEARCH_SERVICE", "test-search-service")
         monkeypatch.setenv("AZURE_SPEECH_SERVICE_ID", "test-id")
         monkeypatch.setenv("AZURE_SPEECH_SERVICE_LOCATION", "eastus")
-        monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "gpt-35-turbo")
+        monkeypatch.setenv("AZURE_AI_CHAT_MODEL_NAME", "gpt-35-turbo")
         monkeypatch.setenv("ALLOWED_ORIGIN", "https://frontend.com")
         for key, value in request.param.items():
             monkeypatch.setenv(key, value)
@@ -373,7 +373,7 @@ async def auth_client(
     monkeypatch.setenv("AZURE_STORAGE_CONTAINER", "test-storage-container")
     monkeypatch.setenv("AZURE_SEARCH_INDEX", "test-search-index")
     monkeypatch.setenv("AZURE_SEARCH_SERVICE", "test-search-service")
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "gpt-35-turbo")
+    monkeypatch.setenv("AZURE_AI_CHAT_MODEL_NAME", "gpt-35-turbo")
     monkeypatch.setenv("USE_USER_UPLOAD", "true")
     monkeypatch.setenv("AZURE_USERSTORAGE_ACCOUNT", "test-userstorage-account")
     monkeypatch.setenv("AZURE_USERSTORAGE_CONTAINER", "test-userstorage-container")
@@ -412,7 +412,7 @@ async def auth_public_documents_client(
     monkeypatch.setenv("AZURE_STORAGE_CONTAINER", "test-storage-container")
     monkeypatch.setenv("AZURE_SEARCH_INDEX", "test-search-index")
     monkeypatch.setenv("AZURE_SEARCH_SERVICE", "test-search-service")
-    monkeypatch.setenv("AZURE_OPENAI_CHATGPT_MODEL", "gpt-35-turbo")
+    monkeypatch.setenv("AZURE_AI_CHAT_MODEL_NAME", "gpt-35-turbo")
     monkeypatch.setenv("USE_USER_UPLOAD", "true")
     monkeypatch.setenv("AZURE_USERSTORAGE_ACCOUNT", "test-userstorage-account")
     monkeypatch.setenv("AZURE_USERSTORAGE_CONTAINER", "test-userstorage-container")

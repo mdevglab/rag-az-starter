@@ -55,8 +55,8 @@ def run_server(port: int):
             "AZURE_SEARCH_SERVICE": "test-search-service",
             "AZURE_SPEECH_SERVICE_ID": "test-id",
             "AZURE_SPEECH_SERVICE_LOCATION": "eastus",
-            "AZURE_OPENAI_SERVICE": "test-openai-service",
-            "AZURE_OPENAI_CHATGPT_MODEL": "gpt-35-turbo",
+            "AZURE_AISERVICES_NAME": "test-openai-service",
+            "AZURE_AI_CHAT_MODEL_NAME": "gpt-35-turbo",
         },
         clear=True,
     ):

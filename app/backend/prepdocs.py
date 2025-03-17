@@ -368,17 +368,17 @@ if __name__ == "__main__":
         openai_key = os.getenv("OPENAI_API_KEY")
 
     openai_dimensions = 1536
-    if os.getenv("AZURE_OPENAI_EMB_DIMENSIONS"):
-        openai_dimensions = int(os.environ["AZURE_OPENAI_EMB_DIMENSIONS"])
+    if os.getenv("AZURE_AI_EMBED_DIMENSIONS"):
+        openai_dimensions = int(os.environ["AZURE_AI_EMBED_DIMENSIONS"])
     openai_embeddings_service = setup_embeddings_service(
         azure_credential=azd_credential,
         openai_host=openai_host,
-        openai_model_name=os.environ["AZURE_OPENAI_EMB_MODEL_NAME"],
-        openai_service=os.getenv("AZURE_OPENAI_SERVICE"),
+        openai_model_name=os.environ["AZURE_AI_EMBED_MODEL_NAME"],
+        openai_service=os.getenv("AZURE_AISERVICES_NAME"),
         openai_custom_url=os.getenv("AZURE_OPENAI_CUSTOM_URL"),
-        openai_deployment=os.getenv("AZURE_OPENAI_EMB_DEPLOYMENT"),
+        openai_deployment=os.getenv("AZURE_AI_EMBED_DEPLOYMENT_NAME"),
         # https://learn.microsoft.com/azure/ai-services/openai/api-version-deprecation#latest-ga-api-release
-        openai_api_version=os.getenv("AZURE_OPENAI_API_VERSION") or "2024-06-01",
+        openai_api_version=os.getenv("AZURE_AI_CHAT_MODEL_VERSION") or "2024-06-01",
         openai_dimensions=openai_dimensions,
         openai_key=clean_key_if_exists(openai_key),
         openai_org=os.getenv("OPENAI_ORGANIZATION"),

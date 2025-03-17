@@ -12,8 +12,8 @@ The free trial accounts currently get a max of 1K TPM (tokens-per-minute), where
 To reduce the TPM allocation, run these commands:
 
 ```shell
-azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY 1
-azd env set AZURE_OPENAI_EMB_DEPLOYMENT_CAPACITY 1
+azd env set AZURE_AI_CHAT_DEPLOYMENT_CAPACITY 1
+azd env set AZURE_AI_EMBED_DEPLOYMENT_CAPACITY 1
 ```
 
 Alternatively, if you have an OpenAI.com account, you can use that instead:

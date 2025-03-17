@@ -32,13 +32,13 @@ Execute the following commands inside your terminal:
 1. To set the name of the deployment, run this command with a unique name in your Azure OpenAI account. You can use any deployment name, as long as it's unique in your Azure OpenAI account.
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT <your-deployment-name>
+    azd env set AZURE_AI_CHAT_DEPLOYMENT_NAME <your-deployment-name>
     ```
 
     For example:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT chat4
+    azd env set AZURE_AI_CHAT_DEPLOYMENT_NAME chat4
     ```
 
 1. To set the GPT model name to a **gpt-4**, **gpt-4o**, or **gpt-4o mini** version from the [available models](https://learn.microsoft.com/azure/ai-services/openai/concepts/models), run this command with the appropriate GPT model name.
@@ -46,31 +46,31 @@ Execute the following commands inside your terminal:
     For GPT-4:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4
+    azd env set AZURE_AI_CHAT_MODEL_NAME gpt-4
     ```
 
     For GPT-4o:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4o
+    azd env set AZURE_AI_CHAT_MODEL_NAME gpt-4o
     ```
 
     For GPT-4o mini:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-4o-mini
+    azd env set AZURE_AI_CHAT_MODEL_NAME gpt-4o-mini
     ```
 
 1. To set the Azure OpenAI deployment SKU name, run this command with [the desired SKU name](https://learn.microsoft.com/azure/ai-services/openai/how-to/deployment-types#deployment-types).
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU GlobalStandard
+    azd env set AZURE_AI_CHAT_DEPLOYMENT_SKU GlobalStandard
     ```
 
 1. To set the Azure OpenAI deployment capacity, run this command with the desired capacity.
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY 10
+    azd env set AZURE_AI_CHAT_DEPLOYMENT_CAPACITY 10
     ```
 
 1. To set the Azure OpenAI deployment version from the [available versions](https://learn.microsoft.com/azure/ai-services/openai/concepts/models), run this command with the appropriate version.
@@ -78,19 +78,19 @@ Execute the following commands inside your terminal:
     For GPT-4:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION turbo-2024-04-09
+    azd env set AZURE_AI_CHAT_MODEL_VERSION turbo-2024-04-09
     ```
 
     For GPT-4o:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2024-05-13
+    azd env set AZURE_AI_CHAT_MODEL_VERSION 2024-05-13
     ```
 
     For GPT-4o mini:
 
     ```bash
-    azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 2024-07-18
+    azd env set AZURE_AI_CHAT_MODEL_VERSION 2024-07-18
     ```
 
 1. To update the deployment with the new parameters, run this command.
@@ -102,11 +102,11 @@ Execute the following commands inside your terminal:
 > [!NOTE]
 > To revert back to GPT 3.5, run the following commands:
 >
-> * `azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT chat` to set the name of your old GPT 3.5 deployment.
-> * `azd env set AZURE_OPENAI_CHATGPT_MODEL gpt-35-turbo` to set the name of your old GPT 3.5 model.
-> * `azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_CAPACITY 30` to set the capacity of your old GPT 3.5 deployment.
-> * `azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_SKU Standard` to set the Sku name back to Standard.
-> * `azd env set AZURE_OPENAI_CHATGPT_DEPLOYMENT_VERSION 0125` to set the version number of your old GPT 3.5.
+> * `azd env set AZURE_AI_CHAT_DEPLOYMENT_NAME chat` to set the name of your old GPT 3.5 deployment.
+> * `azd env set AZURE_AI_CHAT_MODEL_NAME gpt-35-turbo` to set the name of your old GPT 3.5 model.
+> * `azd env set AZURE_AI_CHAT_DEPLOYMENT_CAPACITY 30` to set the capacity of your old GPT 3.5 deployment.
+> * `azd env set AZURE_AI_CHAT_DEPLOYMENT_SKU Standard` to set the Sku name back to Standard.
+> * `azd env set AZURE_AI_CHAT_MODEL_VERSION 0125` to set the version number of your old GPT 3.5.
 > * `azd up` to update the provisioned resources.
 >
 > Note that this does not delete your GPT-4 deployment; it just makes your application create a new or reuse an old GPT 3.5 deployment. If you want to delete it, you can go to your Azure OpenAI studio and do so.
@@ -118,30 +118,30 @@ By default, the deployed Azure web app uses the `text-embedding-ada-002` embeddi
 1. Run one of the following commands to set the desired model:
 
     ```shell
-    azd env set AZURE_OPENAI_EMB_MODEL_NAME text-embedding-3-small
+    azd env set AZURE_AI_EMBED_MODEL_NAME text-embedding-3-small
     ```
 
     ```shell
-    azd env set AZURE_OPENAI_EMB_MODEL_NAME text-embedding-3-large
+    azd env set AZURE_AI_EMBED_MODEL_NAME text-embedding-3-large
     ```
 
 2. Specify the desired dimensions of the model: (from 256-3072, model dependent)
 
     ```shell
-    azd env set AZURE_OPENAI_EMB_DIMENSIONS 256
+    azd env set AZURE_AI_EMBED_DIMENSIONS 256
     ```
 
 3. Set the model version to "1" (the only version as of March 2024):
 
     ```shell
-    azd env set AZURE_OPENAI_EMB_DEPLOYMENT_VERSION 1
+    azd env set AZURE_AI_EMBED_MODEL_VERSION 1
     ```
 
 4. When prompted during `azd up`, make sure to select a region for the OpenAI resource group location that supports the text-embedding-3 models. There are [limited regions available](https://learn.microsoft.com/azure/ai-services/openai/concepts/models#embeddings-models).
 
 If you have already deployed:
 
-* You'll need to change the deployment name by running `azd env set AZURE_OPENAI_EMB_DEPLOYMENT <new-deployment-name>`
+* You'll need to change the deployment name by running `azd env set AZURE_AI_EMBED_DEPLOYMENT_NAME <new-deployment-name>`
 * You'll need to create a new index, and re-index all of the data using the new model. You can either delete the current index in the Azure Portal, or create an index with a different name by running `azd env set AZURE_SEARCH_INDEX new-index-name`. When you next run `azd up`, the new index will be created and the data will be re-indexed.
 * If your OpenAI resource is not in one of the supported regions, you should delete `openAiResourceGroupLocation` from `.azure/YOUR-ENV-NAME/config.json`. When running `azd up`, you will be prompted to select a new region.
 
