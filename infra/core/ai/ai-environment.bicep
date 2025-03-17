@@ -10,8 +10,6 @@ param projectName string
 param keyVaultName string
 @description('The Storage Account resource name.')
 param storageAccountName string
-@description('The Storage Account resource ID.')
-param storageAccountId string
 
 @description('The AI Services resource name.')
 param aiServicesName string
@@ -29,8 +27,6 @@ param applicationInsightsName string = ''
 @description('The Container Registry resource name.')
 param containerRegistryName string = ''
 
-@description('The Application Insights resource ID.')
-param applicationInsightsId string = ''
 @description('The Azure Search resource name.')
 param searchServiceName string = ''
 @description('The Azure Search connection name.')

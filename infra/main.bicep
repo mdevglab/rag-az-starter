@@ -52,9 +52,7 @@ param azureOpenAiCustomUrl string = ''
 param azureOpenAiApiVersion string = ''
 @secure()
 param azureOpenAiApiKey string = ''
-param azureOpenAiDisableKeys bool = true
-param openAiServiceName string = ''
-param openAiResourceGroupName string = ''
+//param azureOpenAiDisableKeys bool = true
 
 param speechServiceResourceGroupName string = ''
 param speechServiceLocation string = ''
@@ -490,11 +488,11 @@ var appEnvVariables = {
   AZURE_AI_CHAT_MODEL_NAME: chatModelName
   AZURE_OPENAI_GPT4V_MODEL: gpt4v.modelName
   // Specific to Azure OpenAI
-  AZURE_OPENAI_SERVICE: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
+  AZURE_AISERVICES_NAME: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
   AZURE_AI_CHAT_DEPLOYMENT_NAME: chatDeploymentName
   AZURE_AI_EMBED_DEPLOYMENT_NAME: embeddingDeploymentName
   AZURE_OPENAI_GPT4V_DEPLOYMENT: useGPT4V ? gpt4v.deploymentName : ''
-  AZURE_OPENAI_API_VERSION: azureOpenAiApiVersion
+  AZURE_AI_CHAT_MODEL_VERSION: azureOpenAiApiVersion
   AZURE_OPENAI_API_KEY_OVERRIDE: azureOpenAiApiKey
   AZURE_OPENAI_CUSTOM_URL: azureOpenAiCustomUrl
   // Used only with non-Azure OpenAI deployments
@@ -682,12 +680,12 @@ var openAiDeployments = concat(
 //   name: 'openai'
 //   scope: openAiResourceGroup
 //   params: {
-//     name: !empty(openAiServiceName) ? openAiServiceName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
+//     name: !empty(aiServicesName) ? aiServicesName : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
 //     location: openAiLocation
 //     tags: tags
 //     kind: 'AIServices' //'OpenAI'
-//     customSubDomainName: !empty(openAiServiceName)
-//       ? openAiServiceName
+//     customSubDomainName: !empty(aiServicesName)
+//       ? aiServicesName
 //       : '${abbrs.cognitiveServicesAccounts}${resourceToken}'
 //     publicNetworkAccess: publicNetworkAccess
 //     networkAcls: {
@@ -708,8 +706,6 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
     tags: tags
     hubName: !empty(aiHubName) ? aiHubName : 'ai-hub-${resourceToken}'
     projectName: projectName
-    storageAccountId: storage.outputs.id
-
     keyVaultName: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
     storageAccountName: !empty(storageAccountName)
       ? storageAccountName
@@ -1321,8 +1317,8 @@ output AZURE_AI_CHAT_MODEL_NAME string = chatModelName
 output AZURE_OPENAI_GPT4V_MODEL string = gpt4v.modelName
 
 // Specific to Azure OpenAI
-output AZURE_OPENAI_SERVICE string = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
-output AZURE_OPENAI_API_VERSION string = isAzureOpenAiHost ? azureOpenAiApiVersion : ''
+output AZURE_AISERVICES_NAME string = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
+output AZURE_AI_CHAT_MODEL_VERSION string = isAzureOpenAiHost ? azureOpenAiApiVersion : ''
 output AZURE_AI_CHAT_DEPLOYMENT_NAME string = isAzureOpenAiHost ? chatDeploymentName : ''
 output AZURE_AI_EMBED_DEPLOYMENT_NAME string = isAzureOpenAiHost ?  embeddingDeploymentName  : ''
 output AZURE_OPENAI_GPT4V_DEPLOYMENT string = isAzureOpenAiHost && useGPT4V ? gpt4v.deploymentName : ''

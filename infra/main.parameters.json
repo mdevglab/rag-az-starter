@@ -23,9 +23,6 @@
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
     },
-    "openAiServiceName": {
-      "value": "${AZURE_OPENAI_SERVICE}"
-    },
     "openAiLocation": {
       "value": "${AZURE_OPENAI_LOCATION}"
     },
@@ -153,7 +150,7 @@
       "value": "${AZURE_OPENAI_CUSTOM_URL}"
     },
     "azureOpenAiApiVersion":{
-      "value": "${AZURE_OPENAI_API_VERSION}"
+      "value": "${AZURE_AI_CHAT_MODEL_VERSION}"
     },
     "azureOpenAiApiKey":{
       "value": "${AZURE_OPENAI_API_KEY_OVERRIDE}"

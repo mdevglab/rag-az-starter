@@ -23,7 +23,7 @@ You should set these values before running `azd up`. Once you've set them, retur
 
 ### Azure OpenAI
 
-1. Run `azd env set AZURE_OPENAI_SERVICE {Name of existing OpenAI service}`
+1. Run `azd env set AZURE_AISERVICES_NAME {Name of existing OpenAI service}`
 1. Run `azd env set AZURE_RESOURCE_GROUP {Name of existing resource group that OpenAI service is provisioned to}`
 1. Run `azd env set AZURE_OPENAI_LOCATION {Location of existing OpenAI service}`
 1. Run `azd env set AZURE_AI_CHAT_DEPLOYMENT_NAME {Name of existing chat deployment}`. Only needed if your chat deployment is not the default 'chat'.

@@ -40,8 +40,8 @@ services:
           continueOnError: false
 pipeline:
   variables:
-      - AZURE_OPENAI_SERVICE
-      - AZURE_OPENAI_API_VERSION
+      - AZURE_AISERVICES_NAME
+      - AZURE_AI_CHAT_MODEL_VERSION
       - AZURE_RESOURCE_GROUP
       - AZURE_OPENAI_LOCATION
       - AZURE_DOCUMENTINTELLIGENCE_SERVICE

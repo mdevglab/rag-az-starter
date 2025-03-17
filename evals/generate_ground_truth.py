@@ -54,14 +54,14 @@ def get_search_documents(azure_credential, num_search_documents=None) -> str:
 
 def generate_ground_truth_ragas(num_questions=200, num_search_documents=None, kg_file=None):
     azure_credential = get_azure_credential()
-    azure_openai_api_version = os.getenv("AZURE_OPENAI_API_VERSION") or "2024-06-01"
-    azure_endpoint = f"https://{os.getenv('AZURE_OPENAI_SERVICE')}.openai.azure.com"
+    AZURE_AI_CHAT_MODEL_VERSION = os.getenv("AZURE_AI_CHAT_MODEL_VERSION") or "2024-06-01"
+    azure_endpoint = f"https://{os.getenv('AZURE_AISERVICES_NAME')}.openai.azure.com"
     azure_ad_token_provider = get_bearer_token_provider(
         azure_credential, "https://cognitiveservices.azure.com/.default"
     )
     generator_llm = LangchainLLMWrapper(
         AzureChatOpenAI(
-            openai_api_version=azure_openai_api_version,
+            openai_api_version=AZURE_AI_CHAT_MODEL_VERSION,
             azure_endpoint=azure_endpoint,
             azure_ad_token_provider=azure_ad_token_provider,
             azure_deployment=os.getenv("AZURE_OPENAI_EVAL_DEPLOYMENT"),
@@ -73,7 +73,7 @@ def generate_ground_truth_ragas(num_questions=200, num_search_documents=None, kg
     # init the embeddings for answer_relevancy, answer_correctness and answer_similarity
     generator_embeddings = LangchainEmbeddingsWrapper(
         AzureOpenAIEmbeddings(
-            openai_api_version=azure_openai_api_version,
+            openai_api_version=AZURE_AI_CHAT_MODEL_VERSION,
             azure_endpoint=azure_endpoint,
             azure_ad_token_provider=azure_ad_token_provider,
             azure_deployment=os.getenv("AZURE_AI_EMBED_DEPLOYMENT_NAME"),
