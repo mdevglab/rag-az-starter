@@ -11,6 +11,9 @@
     "aiServicesNames": {
       "value": ["${AZURE_AISERVICES_NAMES}"]
     },
+    "aiServiceName": {
+      "value": "${AZURE_AI_SERVICE_NAME}"
+    },
     "environmentName": {
       "value": "${AZURE_ENV_NAME}"
     },
@@ -18,13 +21,10 @@
       "value": "${AZURE_RESOURCE_GROUP}"
     },
     "location": {
-      "value": "${AZURE_LOCATION}"
+      "value": "${AZURE_LOCATION=caneast}"
     },
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
-    },
-    "openAiLocation": {
-      "value": "${AZURE_OPENAI_LOCATION}"
     },
     "openAiSkuName": {
       "value": "S0"
@@ -110,9 +110,6 @@
     "backendServiceName": {
       "value": "${AZURE_APP_SERVICE}"
     },
-
-
-
     "gpt4vModelName":{
       "value": "${AZURE_OPENAI_GPT4V_MODEL}"
     },
@@ -309,28 +306,31 @@
       "value": "${USE_MEDIA_DESCRIBER_AZURE_CU=false}"
     },
     "useAiProject": {
-      "value": "${USE_AI_PROJECT=false}"
+      "value": "${USE_AI_PROJECT=true}"
+    },
+    "aiServiceLocation": {
+      "value": "${AZURE_AI_SERVICE_LOCATION=eastus}"
     },
     "chatDeploymentName": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o-mini-dep-chat}"
     },
     "chatModelFormat": {
       "value": "${AZURE_AI_CHAT_MODEL_FORMAT=OpenAI}"
     },
     "chatModelName": {
-      "value": "${AZURE_AI_CHAT_MODEL_NAME=gpt-4o}"
+      "value": "${AZURE_AI_CHAT_MODEL_NAME=gpt-4o-mini}"
     },
     "chatModelVersion": {
-      "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-05-13}"
+      "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-07-18}"
     },
     "chatDeploymentSku": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=Standard}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=GlobalStandard}"
     },
     "chatDeploymentLocation": {
       "value": "${AZURE_AI_CHAT_DEPLOYMENT_LOCATION=eastus}"
     },
     "chatDeploymentCapacity": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=8}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=30}"
     },
     "embeddingDeploymentName": {
       "value": "${AZURE_AI_EMBED_MODEL_NAME=text-embedding-SMALL}"
@@ -348,7 +348,7 @@
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_SKU=Standard}"
     },
     "embedDeploymentLocation": {
-      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=eastus2}"
+      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=eastus}"
     },
     "embedDeploymentCapacity": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_CAPACITY=30}"

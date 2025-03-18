@@ -1,6 +1,4 @@
-@minLength(1)
-@description('Primary location for all resources')
-param location string
+
 
 @description('The AI Hub resource name.')
 param hubName string
@@ -11,10 +9,17 @@ param keyVaultName string
 @description('The Storage Account resource name.')
 param storageAccountName string
 
-@description('The AI Services resource name.')
-param aiServicesNames array = []
+@minLength(1)
+@description('The AI Service resource location.')
+param aiServiceLocation string
+@description('The AI Service resource name.')
+param aiServiceName string
 @description('The AI Services connection name.')
-param aiServicesConnectionNames array = []
+param aiServicesConnectionName string
+// @description('The AI Services resource names.')
+// param aiServicesNames array = []
+// @description('The AI Services connection name.')
+// param aiServicesConnectionNames array = []
 @description('The AI Services model deployments.')
 param aiServiceModelDeployments array = []
 @description('The AI Services content safety connection name.')
@@ -36,14 +41,15 @@ param tags object = {}
 module hubDependencies './hb-dependencies.bicep' = {
   name: 'hubDependencies'
   params: {
-    location: location
+    aiServiceLocation: aiServiceLocation
     tags: tags
     keyVaultName: keyVaultName
     storageAccountName: storageAccountName
     containerRegistryName: containerRegistryName
     applicationInsightsName: applicationInsightsName
     logAnalyticsName: logAnalyticsName
-    aiServicesNames: aiServicesNames
+    //aiServicesNames: aiServicesNames
+    aiServiceName: aiServiceName
     aiServiceModelDeployments: aiServiceModelDeployments
     searchServiceName: searchServiceName
   }
@@ -52,7 +58,7 @@ module hubDependencies './hb-dependencies.bicep' = {
 module hub './hub.bicep' = {
   name: 'hub'
   params: {
-    location: location
+    location: aiServiceLocation
     tags: tags
     name: hubName
     displayName: hubName
@@ -60,8 +66,10 @@ module hub './hub.bicep' = {
     storageAccountId: hubDependencies.outputs.storageAccountId
     containerRegistryId: hubDependencies.outputs.containerRegistryId
     applicationInsightsId: hubDependencies.outputs.applicationInsightsId
-    aiServicesNames: hubDependencies.outputs.aiServicesNames
-    aiServicesConnectionNames: aiServicesConnectionNames
+    aiServiceName: hubDependencies.outputs.aiServiceName
+    aiServicesConnectionName: aiServicesConnectionName
+    //aiServicesNames: hubDependencies.outputs.aiServicesNames
+    //aiServicesConnectionNames: aiServicesConnectionNames
     aiServicesContentSafetyConnectionName: aiServicesContentSafetyConnectionName
     aiSearchName: hubDependencies.outputs.searchServiceName
     aiSearchConnectionName: searchConnectionName
@@ -71,7 +79,7 @@ module hub './hub.bicep' = {
 module project './project.bicep' = {
   name: 'project'
   params: {
-    location: location
+    location: aiServiceLocation
     tags: tags
     name: projectName
     displayName: projectName
@@ -108,13 +116,13 @@ output containerRegistryEndpoint string = hubDependencies.outputs.containerRegis
 output storageAccountName string = hubDependencies.outputs.storageAccountName
 
 // AI Services
-// output aiServicesName string = hubDependencies.outputs.aiServicesName
-// output aiServiceEndpoint string = hubDependencies.outputs.aiServiceEndpoint
+output aiServiceName string = hubDependencies.outputs.aiServiceName
+output aiServiceEndpoint string = hubDependencies.outputs.aiServiceEndpoint
 
-output aiServicesNames array = hubDependencies.outputs.aiServicesNames
-output aiServicesConnectionNames array = hub.outputs.aiServicesConnectionNames
-output cognitiveServicesResourceIds array = hubDependencies.outputs.cognitiveServicesResourceIds
-output aiServicesConnectionIds array = hub.outputs.aiServicesConnectionIds
+// output aiServicesNames array = hubDependencies.outputs.aiServicesNames
+// output aiServicesConnectionNames array = hub.outputs.aiServicesConnectionNames
+// output cognitiveServicesResourceIds array = hubDependencies.outputs.cognitiveServicesResourceIds
+// output aiServicesConnectionIds array = hub.outputs.aiServicesConnectionIds
 
 // Search
 output searchServiceName string = hubDependencies.outputs.searchServiceName
