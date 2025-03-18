@@ -6,7 +6,7 @@ param keyVaultName string
 @description('Name of the storage account')
 param storageAccountName string
 @description('Name of the AI Service')
-param aiServicesName string
+param aiServicesNames array = []
 @description('Array of OpenAI model deployments')
 param aiServiceModelDeployments array = []
 @description('Name of the Log Analytics workspace')
@@ -17,6 +17,10 @@ param applicationInsightsName string = ''
 param containerRegistryName string = ''
 @description('Name of the Azure Cognitive Search service')
 param searchServiceName string = ''
+
+// @description('Embed Deployment Location')
+// param embedDeploymentLocation string
+
 
 module keyVault '../security/keyvault.bicep' = {
   name: 'keyvault'
@@ -124,16 +128,43 @@ module containerRegistry '../host/container-registry.bicep' =
     }
   }
 
-module cognitiveServices '../ai/cognitiveservices.bicep' = {
+module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if empty
   name: 'cognitiveServices'
   params: {
-    location: location
+    //location: location
     tags: tags
-    name: aiServicesName
+    //name: aiServicesName
     kind: 'AIServices'
     deployments: aiServiceModelDeployments
   }
 }
+
+// module cognitiveServices '../ai/cognitiveservices.bicep' =  {
+//   name: 'cognitiveServices'
+//   params: {
+//     location: location
+//     tags: tags
+//     name: aiServicesName
+//     kind: 'AIServices'
+//     deployments: filter(aiServiceModelDeployments, d => d.location == location)
+//   }
+// }
+
+// // Conditional AI Services Deployment
+// // Deploy AI services with different locations when the deployment locations differ
+// module cognitiveServicesEmbed '../ai/cognitiveservices.bicep' = if (embedDeploymentLocation != location) {
+//   name: 'cognitiveServicesEmbed'
+//   params: {
+//     location: embedDeploymentLocation
+//     tags: tags
+//     name: '${aiServicesName}-embed'
+//     kind: 'AIServices'
+//     deployments: filter(aiServiceModelDeployments, d => d.location == embedDeploymentLocation)
+//   }
+// }
+
+
+
 
 module searchService '../search/search-services.bicep' =
   if (!empty(searchServiceName)) {
@@ -145,6 +176,19 @@ module searchService '../search/search-services.bicep' =
       authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
     }
   }
+
+// resource cognitiveServicesResources 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for aiServiceName in aiServicesNames: {
+//   name: aiServiceName
+//   location: location
+//   tags: tags
+//   sku: {
+//     name: 'S0'
+//   }
+//   kind: 'AIServices'
+//   properties: {
+//     customSubDomainName: aiServiceName
+//   }
+// }]  
 
 output keyVaultId string = keyVault.outputs.id
 output keyVaultName string = keyVault.outputs.name
@@ -162,9 +206,19 @@ output applicationInsightsName string = !empty(applicationInsightsName) ? applic
 output logAnalyticsWorkspaceId string = !empty(logAnalyticsName) ? logAnalytics.outputs.id : ''
 output logAnalyticsWorkspaceName string = !empty(logAnalyticsName) ? logAnalytics.outputs.name : ''
 
-output aiServiceId string = cognitiveServices.outputs.id
-output aiServicesName string = cognitiveServices.outputs.name
-output aiServiceEndpoint string = cognitiveServices.outputs.endpoints['OpenAI Language Model Instance API']
+// output aiServiceId string = cognitiveServices.outputs.id
+// output aiServicesName string = cognitiveServices.outputs.name
+// output aiServiceEndpoint string = cognitiveServices.outputs.endpoints['OpenAI Language Model Instance API']
+
+// output aiEmbedServiceId string = cognitiveServicesEmbed.outputs.id
+// output aiEmbedServicesName string = cognitiveServicesEmbed.outputs.name
+// output aiEmbedServiceEndpoint string = cognitiveServicesEmbed.outputs.endpoints['OpenAI Language Model Instance API']
+
+output aiServicesNames array = aiServicesNames
+//output cognitiveServicesResourceIds array = [for resource in cognitiveServicesResources: resource.id]
+
+output cognitiveServicesResourceIds array = [for resource in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts@2023-05-01', resource.id)]
+
 
 output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
 output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''

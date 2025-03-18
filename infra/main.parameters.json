@@ -8,8 +8,8 @@
     "aiProjectName": {
       "value": "${AZURE_AIPROJECT_NAME}"
     },
-    "aiServicesName": {
-      "value": "${AZURE_AISERVICES_NAME}"
+    "aiServicesNames": {
+      "value": ["${AZURE_AISERVICES_NAMES}"]
     },
     "environmentName": {
       "value": "${AZURE_ENV_NAME}"
@@ -324,13 +324,16 @@
       "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-07-18}"
     },
     "chatDeploymentSku": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=GlobalStandard}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=Standard}"
+    },
+    "chatDeploymentLocation": {
+      "value": "${AZURE_AI_chat_DEPLOYMENT_LOCATION}"
     },
     "chatDeploymentCapacity": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=30}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=8}"
     },
     "embeddingDeploymentName": {
-      "value": "${AZURE_AI_EMBED_MODEL_NAME=text-embedding-3-small}"
+      "value": "${AZURE_AI_EMBED_MODEL_NAME=text-embedding-SMALL}"
     },
     "embedModelFormat": {
       "value": "${AZURE_AI_EMBED_MODEL_FORMAT=OpenAI}"
@@ -343,6 +346,9 @@
     },
     "embedDeploymentSku": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_SKU=Standard}"
+    },
+    "embedDeploymentLocation": {
+      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=eastus2}"
     },
     "embedDeploymentCapacity": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_CAPACITY=30}"

@@ -1,11 +1,11 @@
 metadata description = 'Creates an Azure Cognitive Services instance.'
-param name string
-param location string = resourceGroup().location
+
 param tags object = {}
-@description('The custom subdomain name used to access the API. Defaults to the value of the name parameter.')
-param customSubDomainName string = name
+
 param disableLocalAuth bool = false
 param deployments array = []
+param serviceAccounts array = []
+
 param kind string = 'OpenAI'
 //param kind string = 'AIServices'
 
@@ -23,23 +23,41 @@ param networkAcls object = empty(allowedIpRules) ? {
   defaultAction: 'Deny'
 }
 
-resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
-  name: name
+
+var uniqueLocations = [for i in range(0, length(deployments)): (i == 0 || deployments[i].location != deployments[i - 1].location) ? deployments[i].location : null]
+
+resource accounts 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for location in uniqueLocations: if(location != null) {
+  name: 'account-${location}' // Unique name for each account
   location: location
   tags: tags
   kind: kind
   properties: {
-    customSubDomainName: customSubDomainName
+    customSubDomainName: 'account-${location}'
     publicNetworkAccess: publicNetworkAccess
     networkAcls: networkAcls
     disableLocalAuth: disableLocalAuth
   }
   sku: sku
-}
+} ]
+
+
+// resource account 'Microsoft.CognitiveServices/accounts@2023-05-01' = {
+//   name: name
+//   location: location
+//   tags: tags
+//   kind: kind
+//   properties: {
+//     customSubDomainName: customSubDomainName
+//     publicNetworkAccess: publicNetworkAccess
+//     networkAcls: networkAcls
+//     disableLocalAuth: disableLocalAuth
+//   }
+//   sku: sku
+// }
 
 @batchSize(1)
 resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01' = [for deployment in deployments: {
-  parent: account
+  parent: accounts[indexOf(uniqueLocations, deployment.location)] // Find the parent account by location
   name: deployment.name
   properties: {
     model: deployment.model
@@ -51,7 +69,19 @@ resource deployment 'Microsoft.CognitiveServices/accounts/deployments@2023-05-01
   }
 }]
 
-output endpoint string = account.properties.endpoint
-output endpoints object = account.properties.endpoints
-output id string = account.id
-output name string = account.name
+// output endpoint string = account.properties.endpoint
+// output endpoints object = account.properties.endpoints
+// output id string = account.id
+// output name string = account.name
+
+
+output endpoints array = [for i in range(0, length(uniqueLocations)): accounts[i].properties.endpoint]
+
+output endpointsObject array = [for i in range(0, length(uniqueLocations)): {
+  endpoint: accounts[i].properties.endpoint
+  endpoints: accounts[i].properties.endpoints
+}]
+
+output ids array = [for i in range(0, length(uniqueLocations)): accounts[i].id]
+
+output names array = [for i in range(0, length(uniqueLocations)): accounts[i].name]

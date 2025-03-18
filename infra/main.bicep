@@ -188,6 +188,11 @@ param embedModelFormat string
 param embedModelName string
 @description('Name of the embedding model deployment')
 param embeddingDeploymentName string
+
+@allowed(['eastus', 'eastus2'])
+@description('Location of the embeddings model deployment')
+param embedDeploymentLocation string
+
 @description('Embedding model dimensionality')
 param embeddingDeploymentDimensions string
 
@@ -210,9 +215,9 @@ param aiProjectName string = ''
 @description('The Azure AI Foundry Hub resource name. If ommited will be generated')
 param aiHubName string = ''
 @description('The AI Services resource name. If ommited will be generated')
-param aiServicesName string = ''
+param aiServicesNames array = []
 @description('The AI Services connection name. If ommited will use a default value')
-param aiServicesConnectionName string = ''
+param aiServicesConnectionNames array = []
 @description('The AI Services content safety connection name. If ommited will use a default value')
 param aiServicesContentSafetyConnectionName string = ''
 
@@ -380,7 +385,9 @@ var containerRegistryResolvedName = !useContainerRegistry
 
 var aiChatModel = [
   {
+    accountName: 'account1'
     name: chatDeploymentName
+    location: location
     model: {
       format: chatModelFormat
       name: chatModelName
@@ -394,7 +401,9 @@ var aiChatModel = [
 ]
 var aiEmbeddingModel = [ 
   {
+    accountName: 'account2'
     name: embeddingDeploymentName
+    location: embedDeploymentLocation // to check , not sure it's pickingup
     model: {
       format: embedModelFormat
       name: embedModelName
@@ -488,7 +497,7 @@ var appEnvVariables = {
   AZURE_AI_CHAT_MODEL_NAME: chatModelName
   AZURE_OPENAI_GPT4V_MODEL: gpt4v.modelName
   // Specific to Azure OpenAI
-  AZURE_AISERVICES_NAME: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
+  AZURE_AISERVICES_NAMES: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesNames : []
   AZURE_AI_CHAT_DEPLOYMENT_NAME: chatDeploymentName
   AZURE_AI_EMBED_DEPLOYMENT_NAME: embeddingDeploymentName
   AZURE_OPENAI_GPT4V_DEPLOYMENT: useGPT4V ? gpt4v.deploymentName : ''
@@ -641,40 +650,40 @@ module acaAuth 'core/host/container-apps-auth.bicep' = if (deploymentTarget == '
 }
 
 
-var openAiDeployments = concat(
-  aiDeployments,
-  useEval
-    ? [
-      {
-        name: eval.deploymentName
-        model: {
-          format: 'OpenAI'
-          name: eval.modelName
-          version: eval.deploymentVersion
-        }
-        sku: {
-          name: eval.deploymentSkuName
-          capacity: eval.deploymentCapacity
-        }
-      }
-    ] : [],
-  useGPT4V
-    ? [
-        {
-          name: gpt4v.deploymentName
-          model: {
-            format: 'OpenAI'
-            name: gpt4v.modelName
-            version: gpt4v.deploymentVersion
-          }
-          sku: {
-            name: gpt4v.deploymentSkuName
-            capacity: gpt4v.deploymentCapacity
-          }
-        }
-      ]
-    : []
-)
+// var openAiDeployments = concat(
+//   aiDeployments,
+//   useEval
+//     ? [
+//       {
+//         name: eval.deploymentName
+//         model: {
+//           format: 'OpenAI'
+//           name: eval.modelName
+//           version: eval.deploymentVersion
+//         }
+//         sku: {
+//           name: eval.deploymentSkuName
+//           capacity: eval.deploymentCapacity
+//         }
+//       }
+//     ] : [],
+//   useGPT4V
+//     ? [
+//         {
+//           name: gpt4v.deploymentName
+//           model: {
+//             format: 'OpenAI'
+//             name: gpt4v.modelName
+//             version: gpt4v.deploymentVersion
+//           }
+//           sku: {
+//             name: gpt4v.deploymentSkuName
+//             capacity: gpt4v.deploymentCapacity
+//           }
+//         }
+//       ]
+//     : []
+// )
 
 // module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzureOpenAiHost && deployAzureOpenAi) {
 //   name: 'openai'
@@ -710,8 +719,8 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
     storageAccountName: !empty(storageAccountName)
       ? storageAccountName
       : '${abbrs.storageStorageAccounts}${resourceToken}'
-    aiServicesName: !empty(aiServicesName) ? aiServicesName : 'aoai-${resourceToken}'
-    aiServicesConnectionName: !empty(aiServicesConnectionName) ? aiServicesConnectionName : 'aoai-${resourceToken}'
+    aiServicesNames: !empty(aiServicesNames) ? aiServicesNames : ['aoai-${resourceToken}']
+    aiServicesConnectionNames: !empty(aiServicesConnectionNames) ? aiServicesConnectionNames : ['aoai-${resourceToken}']
     aiServicesContentSafetyConnectionName: !empty(aiServicesContentSafetyConnectionName)
       ? aiServicesContentSafetyConnectionName
       : 'aoai-content-safety-connection'
@@ -1317,7 +1326,7 @@ output AZURE_AI_CHAT_MODEL_NAME string = chatModelName
 output AZURE_OPENAI_GPT4V_MODEL string = gpt4v.modelName
 
 // Specific to Azure OpenAI
-output AZURE_AISERVICES_NAME string = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
+output AZURE_AISERVICES_NAMES array = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesNames : []
 output AZURE_AI_CHAT_MODEL_VERSION string = isAzureOpenAiHost ? azureOpenAiApiVersion : ''
 output AZURE_AI_CHAT_DEPLOYMENT_NAME string = isAzureOpenAiHost ? chatDeploymentName : ''
 output AZURE_AI_EMBED_DEPLOYMENT_NAME string = isAzureOpenAiHost ?  embeddingDeploymentName  : ''
@@ -1361,3 +1370,9 @@ output BACKEND_URI string = deploymentTarget == 'appservice' ? backend.outputs.u
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = deploymentTarget == 'containerapps'
   ? containerApps.outputs.registryLoginServer
   : ''
+
+
+output aiServicesNames array = ai.outputs.aiServicesNames
+output aiServicesConnectionNames array = ai.outputs.aiServicesConnectionNames
+output cognitiveServicesResourceIds array = ai.outputs.cognitiveServicesResourceIds
+output aiServicesConnectionIds array = ai.outputs.aiServicesConnectionIds

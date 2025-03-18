@@ -27,9 +27,9 @@ param skuTier string = 'Basic'
 param publicNetworkAccess string = 'Enabled'
 
 @description('The AI Services account name to use for the AI Foundry Hub Resource')
-param aiServicesName string
+param aiServicesNames array = []
 @description('The AI Services connection name to use for the AI Foundry Hub Resource')
-param aiServicesConnectionName string
+param aiServicesConnectionNames array = []
 @description('The AI Services Content Safety connection name to use for the AI Foundry Hub Resource')
 param aiServicesContentSafetyConnectionName string
 
@@ -63,41 +63,42 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' =
     publicNetworkAccess: publicNetworkAccess
   }
 
-  resource aiServiceConnection 'connections' = {
-    name: aiServicesConnectionName
+  resource aiServiceConnections 'connections' =  [for aiServiceName in aiServicesNames: {
+    name: '${aiServiceName}-connection'
+    //location: location
     properties: {
       category: 'AIServices'
       authType: 'ApiKey'
       isSharedToAll: true
-      target: aiService.properties.endpoint
+      target: reference(resourceId('Microsoft.CognitiveServices/accounts', aiServiceName)).properties.endpoint
       metadata: {
         ApiVersion: '2023-07-01-preview'
         ApiType: 'azure'
-        ResourceId: aiService.id
+        ResourceId: resourceId('Microsoft.CognitiveServices/accounts', aiServiceName)
       }
       credentials: {
-        key: aiService.listKeys().key1
+        key: listKeys(resourceId('Microsoft.CognitiveServices/accounts', aiServiceName), '2023-05-01').key1
       }
     }
-  }
+  }]
 
-  resource contentSafetyConnection 'connections' = {
-    name: aiServicesContentSafetyConnectionName
-    properties: {
-      category: 'AzureOpenAI'
-      authType: 'ApiKey'
-      isSharedToAll: true
-      target: aiService.properties.endpoints['Content Safety']
-      metadata: {
-        ApiVersion: '2023-07-01-preview'
-        ApiType: 'azure'
-        ResourceId: aiService.id
-      }
-      credentials: {
-        key: aiService.listKeys().key1
-      }
-    }
-  }
+  // resource contentSafetyConnection 'connections' = {
+  //   name: aiServicesContentSafetyConnectionName
+  //   properties: {
+  //     category: 'AzureOpenAI'
+  //     authType: 'ApiKey'
+  //     isSharedToAll: true
+  //     target: aiService.properties.endpoints['Content Safety']
+  //     metadata: {
+  //       ApiVersion: '2023-07-01-preview'
+  //       ApiType: 'azure'
+  //       ResourceId: aiService.id
+  //     }
+  //     credentials: {
+  //       key: aiService.listKeys().key1
+  //     }
+  //   }
+  // }
 
 
   resource searchConnection 'connections' =
@@ -115,16 +116,24 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' =
     }
 }
 
-resource aiService 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: aiServicesName
-}
+// resource aiService 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
+//   name: aiServicesName
+// }
+
+
 
 resource search 'Microsoft.Search/searchServices@2021-04-01-preview' existing =
   if (!empty(aiSearchName)) {
     name: aiSearchName
   }
 
+
+output aiServicesConnectionNames array = [for service in aiServicesNames: '${service}-connection']
+output aiServicesConnectionIds array = [for aiService in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts', aiService.id)]
+
+
 output name string = hub.name
 output id string = hub.id
-output aiServiceRessourceId string = aiService.id
+//output aiServiceRessourceId string = aiService.id
+output aiServiceResourceIds array = [for aiService in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts', aiService.id)]
 output principalId string = hub.identity.principalId
