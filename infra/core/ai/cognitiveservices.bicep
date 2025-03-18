@@ -27,7 +27,7 @@ param networkAcls object = empty(allowedIpRules) ? {
 var uniqueLocations = [for i in range(0, length(deployments)): (i == 0 || deployments[i].location != deployments[i - 1].location) ? deployments[i].location : null]
 
 resource accounts 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for location in uniqueLocations: if(location != null) {
-  name: 'account-${location}' // Unique name for each account
+  name: deployments[location].accountName //'account-${location}' // Unique name for each account
   location: location
   tags: tags
   kind: kind
@@ -37,7 +37,10 @@ resource accounts 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for locat
     networkAcls: networkAcls
     disableLocalAuth: disableLocalAuth
   }
-  sku: sku
+  sku: {
+    name: deployments[location].sku.name
+    capacity: deployments[location].sku.capacity
+  }
 } ]
 
 

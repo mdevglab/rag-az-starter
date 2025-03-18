@@ -312,22 +312,22 @@
       "value": "${USE_AI_PROJECT=false}"
     },
     "chatDeploymentName": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o-mini}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o}"
     },
     "chatModelFormat": {
       "value": "${AZURE_AI_CHAT_MODEL_FORMAT=OpenAI}"
     },
     "chatModelName": {
-      "value": "${AZURE_AI_CHAT_MODEL_NAME=gpt-4o-mini}"
+      "value": "${AZURE_AI_CHAT_MODEL_NAME=gpt-4o}"
     },
     "chatModelVersion": {
-      "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-07-18}"
+      "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-05-13}"
     },
     "chatDeploymentSku": {
       "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=Standard}"
     },
     "chatDeploymentLocation": {
-      "value": "${AZURE_AI_chat_DEPLOYMENT_LOCATION}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_LOCATION=eastus}"
     },
     "chatDeploymentCapacity": {
       "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=8}"

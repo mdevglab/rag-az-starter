@@ -383,6 +383,9 @@ var containerRegistryResolvedName = !useContainerRegistry
   ? ''
   : !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
 
+
+
+
 var aiChatModel = [
   {
     accountName: 'account1'
