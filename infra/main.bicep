@@ -481,7 +481,7 @@ var appEnvVariables = {
   AZURE_STORAGE_ACCOUNT: storage.outputs.name
   AZURE_STORAGE_CONTAINER: storageContainerName
   AZURE_SEARCH_INDEX: searchIndexName
-  //AZURE_SEARCH_SERVICE: searchService.outputs.name
+  AZURE_SEARCH_SERVICE: searchServiceName //searchService.outputs.name
   AZURE_SEARCH_SEMANTIC_RANKER: actualSearchServiceSemanticRankerLevel
   AZURE_VISION_ENDPOINT: useGPT4V ? computerVision.outputs.endpoint : ''
   AZURE_SEARCH_QUERY_LANGUAGE: searchQueryLanguage
@@ -747,7 +747,7 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
       ? ''
       : !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     containerRegistryName: containerRegistryResolvedName
-    searchServiceName:  !empty(searchServiceName) ? searchServiceName : '${abbrs.searchSearchServices}${resourceToken}' //searchService.outputs.name
+    searchServiceName:  searchService.outputs.name //!empty(searchServiceName) ? searchServiceName : '${abbrs.searchSearchServices}${resourceToken}' //
     searchConnectionName: !empty(searchConnectionName) ? searchConnectionName : 'search-service-connection'
   }
 }
@@ -835,24 +835,24 @@ module speech 'br/public:avm/res/cognitive-services/account:0.7.2' = if (useSpee
     sku: speechServiceSkuName
   }
 }
-// module searchService 'core/search/search-services.bicep' = {
-//   name: 'search-service'
-//   scope: searchServiceResourceGroup
-//   params: {
-//     name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
-//     location: !empty(searchServiceLocation) ? searchServiceLocation : location
-//     tags: tags
-//     disableLocalAuth: true
-//     sku: {
-//       name: searchServiceSkuName
-//     }
-//     semanticSearch: actualSearchServiceSemanticRankerLevel
-//     publicNetworkAccess: publicNetworkAccess == 'Enabled'
-//       ? 'enabled'
-//       : (publicNetworkAccess == 'Disabled' ? 'disabled' : null)
-//     sharedPrivateLinkStorageAccounts: usePrivateEndpoint ? [storage.outputs.id] : []
-//   }
-// }
+module searchService 'core/search/search-services.bicep' = {
+  name: 'search-service'
+  scope: searchServiceResourceGroup
+  params: {
+    name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
+    location: !empty(searchServiceLocation) ? searchServiceLocation : location
+    tags: tags
+    disableLocalAuth: true
+    sku: {
+      name: searchServiceSkuName
+    }
+    semanticSearch: actualSearchServiceSemanticRankerLevel
+    publicNetworkAccess: publicNetworkAccess == 'Enabled'
+      ? 'enabled'
+      : (publicNetworkAccess == 'Disabled' ? 'disabled' : null)
+    sharedPrivateLinkStorageAccounts: usePrivateEndpoint ? [storage.outputs.id] : []
+  }
+}
 
 // module searchDiagnostics 'core/search/search-diagnostics.bicep' = if (useApplicationInsights) {
 //   name: 'search-diagnostics'
@@ -1362,10 +1362,10 @@ output AZURE_DOCUMENTINTELLIGENCE_SERVICE string = documentIntelligence.outputs.
 output AZURE_DOCUMENTINTELLIGENCE_RESOURCE_GROUP string = documentIntelligenceResourceGroup.name
 
 output AZURE_SEARCH_INDEX string = searchIndexName
-//output AZURE_SEARCH_SERVICE string = searchService.outputs.name
+output AZURE_SEARCH_SERVICE string = searchService.outputs.name
 output AZURE_SEARCH_SERVICE_RESOURCE_GROUP string = searchServiceResourceGroup.name
 output AZURE_SEARCH_SEMANTIC_RANKER string = actualSearchServiceSemanticRankerLevel
-//output AZURE_SEARCH_SERVICE_ASSIGNED_USERID string = searchService.outputs.principalId
+output AZURE_SEARCH_SERVICE_ASSIGNED_USERID string = searchService.outputs.principalId
 
 output AZURE_COSMOSDB_ACCOUNT string = (useAuthentication && useChatHistoryCosmos) ? cosmosDb.outputs.name : ''
 output AZURE_CHAT_HISTORY_DATABASE string = chatHistoryDatabaseName

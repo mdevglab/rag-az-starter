@@ -33,7 +33,7 @@ param applicationInsightsName string = ''
 param containerRegistryName string = ''
 
 @description('The Azure Search resource name.')
-param searchServiceName string = ''
+param searchServiceName string
 @description('The Azure Search connection name.')
 param searchConnectionName string = ''
 param tags object = {}
@@ -71,7 +71,7 @@ module hub './hub.bicep' = {
     //aiServicesNames: hubDependencies.outputs.aiServicesNames
     //aiServicesConnectionNames: aiServicesConnectionNames
     aiServicesContentSafetyConnectionName: aiServicesContentSafetyConnectionName
-    aiSearchName: hubDependencies.outputs.searchServiceName
+    aiSearchName: searchServiceName
     aiSearchConnectionName: searchConnectionName
   }
 }
@@ -125,8 +125,8 @@ output aiServiceEndpoint string = hubDependencies.outputs.aiServiceEndpoint
 // output aiServicesConnectionIds array = hub.outputs.aiServicesConnectionIds
 
 // Search
-output searchServiceName string = hubDependencies.outputs.searchServiceName
-output searchServiceEndpoint string = hubDependencies.outputs.searchServiceEndpoint
+// output searchServiceName string = hubDependencies.outputs.searchServiceName
+// output searchServiceEndpoint string = hubDependencies.outputs.searchServiceEndpoint
 
 //Discoveryurl
 output discoveryUrl string = project.outputs.discoveryUrl

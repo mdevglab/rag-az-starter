@@ -146,16 +146,16 @@ module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if
 
 
 
-module searchService '../search/search-services.bicep' =
-  if (!empty(searchServiceName)) {
-    name: 'searchService'
-    params: {
-      location: location
-      tags: tags
-      name: searchServiceName
-      authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
-    }
-  }
+// module searchService '../search/search-services.bicep' =
+//   if (!empty(searchServiceName)) {
+//     name: 'searchService'
+//     params: {
+//       location: location
+//       tags: tags
+//       name: searchServiceName
+//       authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
+//     }
+//   }
 
   // module searchService 'core/search/search-services.bicep' = {
   //   name: 'search-service'
@@ -219,6 +219,6 @@ output aiServiceEndpoint string = cognitiveServices.outputs.endpoints['OpenAI La
 //output cognitiveServicesResourceIds array = [for resource in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts@2023-05-01', resource.id)]
 
 
-output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
-output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''
-output searchServiceEndpoint string = !empty(searchServiceName) ? searchService.outputs.endpoint : ''
+// output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
+// output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''
+// output searchServiceEndpoint string = !empty(searchServiceName) ? searchService.outputs.endpoint : ''
