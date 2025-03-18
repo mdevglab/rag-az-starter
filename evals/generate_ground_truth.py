@@ -55,7 +55,7 @@ def get_search_documents(azure_credential, num_search_documents=None) -> str:
 def generate_ground_truth_ragas(num_questions=200, num_search_documents=None, kg_file=None):
     azure_credential = get_azure_credential()
     AZURE_AI_CHAT_MODEL_VERSION = os.getenv("AZURE_AI_CHAT_MODEL_VERSION") or "2024-06-01"
-    azure_endpoint = f"https://{os.getenv('AZURE_AISERVICES_NAMES')}.openai.azure.com"
+    azure_endpoint = f"https://{os.getenv('AZURE_AI_SERVICE_NAME')}.openai.azure.com"
     azure_ad_token_provider = get_bearer_token_provider(
         azure_credential, "https://cognitiveservices.azure.com/.default"
     )

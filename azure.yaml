@@ -40,6 +40,7 @@ services:
           continueOnError: false
 pipeline:
   variables:
+      - AZURE_AI_SERVICE_NAME
       - AZURE_AISERVICES_NAMES
       - AZURE_AI_CHAT_MODEL_VERSION
       - AZURE_RESOURCE_GROUP
