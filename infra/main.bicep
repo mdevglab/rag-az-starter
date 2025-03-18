@@ -44,6 +44,9 @@ param tokenStorageContainerName string = 'tokens'
 
 param appServiceSkuName string // Set in main.parameters.json
 
+
+param aiServiceLocation string = '' // Set in main.parameters.json
+
 @allowed(['azure', 'openai', 'azure_custom'])
 param openAiHost string // Set in main.parameters.json
 param isAzureOpenAiHost bool = true //startsWith(openAiHost, 'azure')  // TODO refactor
@@ -72,26 +75,26 @@ param chatHistoryDatabaseName string = 'chat-database'
 param chatHistoryContainerName string = 'chat-history-v2'
 param chatHistoryVersion string = 'cosmosdb-v2'
 
-// https://learn.microsoft.com/azure/ai-services/openai/concepts/models?tabs=python-secure%2Cstandard%2Cstandard-chat-completions#standard-deployment-model-availability
-@description('Location for the OpenAI resource group')
-@allowed([
-  'canadaeast'
-  'eastus'
-  'eastus2'
-  'francecentral'
-  'switzerlandnorth'
-  'uksouth'
-  'japaneast'
-  'northcentralus'
-  'australiaeast'
-  'swedencentral'
-])
-@metadata({
-  azd: {
-    type: 'location'
-  }
-})
-param openAiLocation string
+// // https://learn.microsoft.com/azure/ai-services/openai/concepts/models?tabs=python-secure%2Cstandard%2Cstandard-chat-completions#standard-deployment-model-availability
+// @description('Location for the OpenAI resource group')
+// @allowed([
+//   'canadaeast'
+//   'eastus'
+//   'eastus2'
+//   'francecentral'
+//   'switzerlandnorth'
+//   'uksouth'
+//   'japaneast'
+//   'northcentralus'
+//   'australiaeast'
+//   'swedencentral'
+// ])
+// @metadata({
+//   azd: {
+//     type: 'location'
+//   }
+// })
+// param openAiLocation string
 
 @description('Use this parameter to use an existing AI project connection string')
 param aiExistingProjectConnectionString string = ''
@@ -188,6 +191,11 @@ param embedModelFormat string
 param embedModelName string
 @description('Name of the embedding model deployment')
 param embeddingDeploymentName string
+
+@allowed(['eastus', 'eastus2'])
+@description('Location of the embeddings model deployment')
+param embedDeploymentLocation string
+
 @description('Embedding model dimensionality')
 param embeddingDeploymentDimensions string
 
@@ -209,8 +217,12 @@ param embedDeploymentCapacity int
 param aiProjectName string = ''
 @description('The Azure AI Foundry Hub resource name. If ommited will be generated')
 param aiHubName string = ''
+// @description('The AI Services resource name. If ommited will be generated')
+// param aiServicesNames array = []
 @description('The AI Services resource name. If ommited will be generated')
-param aiServicesName string = ''
+param aiServiceName string = ''
+// @description('The AI Services connection name. If ommited will use a default value')
+// param aiServicesConnectionNames array = []
 @description('The AI Services connection name. If ommited will use a default value')
 param aiServicesConnectionName string = ''
 @description('The AI Services content safety connection name. If ommited will use a default value')
@@ -378,9 +390,14 @@ var containerRegistryResolvedName = !useContainerRegistry
   ? ''
   : !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
 
+
+
+
 var aiChatModel = [
   {
+    accountName: 'account1'
     name: chatDeploymentName
+    location: location
     model: {
       format: chatModelFormat
       name: chatModelName
@@ -394,7 +411,9 @@ var aiChatModel = [
 ]
 var aiEmbeddingModel = [ 
   {
+    accountName: 'account2'
     name: embeddingDeploymentName
+    location: embedDeploymentLocation // to check , not sure it's pickingup
     model: {
       format: embedModelFormat
       name: embedModelName
@@ -407,8 +426,11 @@ var aiEmbeddingModel = [
   }
 ]
 
-var aiDeployments = concat(
-  aiChatModel, aiEmbeddingModel)
+// No deployment via infra ( probleme gestion capacite par location )
+// var aiDeployments = concat(
+//   aiChatModel, aiEmbeddingModel)
+
+  var aiDeployments = []
 
 // Monitor application with Azure Monitor
 module monitoring 'core/monitor/monitoring.bicep' = if (useApplicationInsights) {
@@ -459,7 +481,7 @@ var appEnvVariables = {
   AZURE_STORAGE_ACCOUNT: storage.outputs.name
   AZURE_STORAGE_CONTAINER: storageContainerName
   AZURE_SEARCH_INDEX: searchIndexName
-  AZURE_SEARCH_SERVICE: searchService.outputs.name
+  AZURE_SEARCH_SERVICE: searchServiceName //searchService.outputs.name
   AZURE_SEARCH_SEMANTIC_RANKER: actualSearchServiceSemanticRankerLevel
   AZURE_VISION_ENDPOINT: useGPT4V ? computerVision.outputs.endpoint : ''
   AZURE_SEARCH_QUERY_LANGUAGE: searchQueryLanguage
@@ -488,7 +510,8 @@ var appEnvVariables = {
   AZURE_AI_CHAT_MODEL_NAME: chatModelName
   AZURE_OPENAI_GPT4V_MODEL: gpt4v.modelName
   // Specific to Azure OpenAI
-  AZURE_AISERVICES_NAME: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
+  //AZURE_AISERVICES_NAMES: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesNames : []
+  AZURE_AI_SERVICE_NAME: isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServiceName : ''
   AZURE_AI_CHAT_DEPLOYMENT_NAME: chatDeploymentName
   AZURE_AI_EMBED_DEPLOYMENT_NAME: embeddingDeploymentName
   AZURE_OPENAI_GPT4V_DEPLOYMENT: useGPT4V ? gpt4v.deploymentName : ''
@@ -641,40 +664,40 @@ module acaAuth 'core/host/container-apps-auth.bicep' = if (deploymentTarget == '
 }
 
 
-var openAiDeployments = concat(
-  aiDeployments,
-  useEval
-    ? [
-      {
-        name: eval.deploymentName
-        model: {
-          format: 'OpenAI'
-          name: eval.modelName
-          version: eval.deploymentVersion
-        }
-        sku: {
-          name: eval.deploymentSkuName
-          capacity: eval.deploymentCapacity
-        }
-      }
-    ] : [],
-  useGPT4V
-    ? [
-        {
-          name: gpt4v.deploymentName
-          model: {
-            format: 'OpenAI'
-            name: gpt4v.modelName
-            version: gpt4v.deploymentVersion
-          }
-          sku: {
-            name: gpt4v.deploymentSkuName
-            capacity: gpt4v.deploymentCapacity
-          }
-        }
-      ]
-    : []
-)
+// var openAiDeployments = concat(
+//   aiDeployments,
+//   useEval
+//     ? [
+//       {
+//         name: eval.deploymentName
+//         model: {
+//           format: 'OpenAI'
+//           name: eval.modelName
+//           version: eval.deploymentVersion
+//         }
+//         sku: {
+//           name: eval.deploymentSkuName
+//           capacity: eval.deploymentCapacity
+//         }
+//       }
+//     ] : [],
+//   useGPT4V
+//     ? [
+//         {
+//           name: gpt4v.deploymentName
+//           model: {
+//             format: 'OpenAI'
+//             name: gpt4v.modelName
+//             version: gpt4v.deploymentVersion
+//           }
+//           sku: {
+//             name: gpt4v.deploymentSkuName
+//             capacity: gpt4v.deploymentCapacity
+//           }
+//         }
+//       ]
+//     : []
+// )
 
 // module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzureOpenAiHost && deployAzureOpenAi) {
 //   name: 'openai'
@@ -698,11 +721,11 @@ var openAiDeployments = concat(
 //   }
 // }
 
+
 module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnectionString)) { // && useAiProject
   name: 'ai'
   scope: resourceGroup
   params: {
-    location: location
     tags: tags
     hubName: !empty(aiHubName) ? aiHubName : 'ai-hub-${resourceToken}'
     projectName: projectName
@@ -710,8 +733,11 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
     storageAccountName: !empty(storageAccountName)
       ? storageAccountName
       : '${abbrs.storageStorageAccounts}${resourceToken}'
-    aiServicesName: !empty(aiServicesName) ? aiServicesName : 'aoai-${resourceToken}'
+    aiServiceLocation: aiServiceLocation
+    aiServiceName: !empty(aiServiceName) ? aiServiceName : 'aoai-${resourceToken}'
     aiServicesConnectionName: !empty(aiServicesConnectionName) ? aiServicesConnectionName : 'aoai-${resourceToken}'
+    // aiServicesNames: !empty(aiServicesNames) ? aiServicesNames : ['aoai-${resourceToken}']
+    // aiServicesConnectionNames: !empty(aiServicesConnectionNames) ? aiServicesConnectionNames : ['aoai-${resourceToken}']
     aiServicesContentSafetyConnectionName: !empty(aiServicesContentSafetyConnectionName)
       ? aiServicesContentSafetyConnectionName
       : 'aoai-content-safety-connection'
@@ -721,7 +747,7 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
       ? ''
       : !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     containerRegistryName: containerRegistryResolvedName
-    searchServiceName: searchService.outputs.name
+    searchServiceName:  searchService.outputs.name //!empty(searchServiceName) ? searchServiceName : '${abbrs.searchSearchServices}${resourceToken}' //
     searchConnectionName: !empty(searchConnectionName) ? searchConnectionName : 'search-service-connection'
   }
 }
@@ -828,14 +854,14 @@ module searchService 'core/search/search-services.bicep' = {
   }
 }
 
-module searchDiagnostics 'core/search/search-diagnostics.bicep' = if (useApplicationInsights) {
-  name: 'search-diagnostics'
-  scope: searchServiceResourceGroup
-  params: {
-    searchServiceName: searchService.outputs.name
-    workspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
-  }
-}
+// module searchDiagnostics 'core/search/search-diagnostics.bicep' = if (useApplicationInsights) {
+//   name: 'search-diagnostics'
+//   scope: searchServiceResourceGroup
+//   params: {
+//     searchServiceName: searchService.outputs.name
+//     workspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
+//   }
+// }
 
 module storage 'core/storage/storage-account.bicep' = {
   name: 'storage'
@@ -1091,15 +1117,15 @@ module openAiRoleBackend 'core/security/role.bicep' = if (isAzureOpenAiHost && d
   }
 }
 
-module openAiRoleSearchService 'core/security/role.bicep' = if (isAzureOpenAiHost && deployAzureOpenAi && useIntegratedVectorization) {
-  scope: resourceGroup
-  name: 'openai-role-searchservice'
-  params: {
-    principalId: searchService.outputs.principalId
-    roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
-    principalType: 'ServicePrincipal'
-  }
-}
+// module openAiRoleSearchService 'core/security/role.bicep' = if (isAzureOpenAiHost && deployAzureOpenAi && useIntegratedVectorization) {
+//   scope: resourceGroup
+//   name: 'openai-role-searchservice'
+//   params: {
+//     principalId: searchService.outputs.principalId
+//     roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd'
+//     principalType: 'ServicePrincipal'
+//   }
+// }
 
 module storageRoleBackend 'core/security/role.bicep' = {
   scope: storageResourceGroup
@@ -1125,15 +1151,15 @@ module storageOwnerRoleBackend 'core/security/role.bicep' = if (useUserUpload) {
   }
 }
 
-module storageRoleSearchService 'core/security/role.bicep' = if (useIntegratedVectorization) {
-  scope: storageResourceGroup
-  name: 'storage-role-searchservice'
-  params: {
-    principalId: searchService.outputs.principalId
-    roleDefinitionId: '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
-    principalType: 'ServicePrincipal'
-  }
-}
+// module storageRoleSearchService 'core/security/role.bicep' = if (useIntegratedVectorization) {
+//   scope: storageResourceGroup
+//   name: 'storage-role-searchservice'
+//   params: {
+//     principalId: searchService.outputs.principalId
+//     roleDefinitionId: '2a2b9908-6ea1-4ae2-8e65-a410df84e7d1'
+//     principalType: 'ServicePrincipal'
+//   }
+// }
 
 // Used to issue search queries
 // https://learn.microsoft.com/azure/search/search-security-rbac
@@ -1210,47 +1236,47 @@ var openAiPrivateEndpointConnection =  []
 //     ]
 //   : 
 
-var otherPrivateEndpointConnections = (usePrivateEndpoint && deploymentTarget == 'appservice')
-  ? [
-      {
-        groupId: 'blob'
-        dnsZoneName: 'privatelink.blob.${environmentData.suffixes.storage}'
-        resourceIds: concat([storage.outputs.id], useUserUpload ? [userStorage.outputs.id] : [])
-      }
-      {
-        groupId: 'searchService'
-        dnsZoneName: 'privatelink.search.windows.net'
-        resourceIds: [searchService.outputs.id]
-      }
-      {
-        groupId: 'sites'
-        dnsZoneName: 'privatelink.azurewebsites.net'
-        resourceIds: [backend.outputs.id]
-      }
-      {
-        groupId: 'sql'
-        dnsZoneName: 'privatelink.documents.azure.com'
-        resourceIds: (useAuthentication && useChatHistoryCosmos) ? [cosmosDb.outputs.resourceId] : []
-      }
-    ]
-  : []
+// var otherPrivateEndpointConnections = (usePrivateEndpoint && deploymentTarget == 'appservice')
+//   ? [
+//       {
+//         groupId: 'blob'
+//         dnsZoneName: 'privatelink.blob.${environmentData.suffixes.storage}'
+//         resourceIds: concat([storage.outputs.id], useUserUpload ? [userStorage.outputs.id] : [])
+//       }
+//       {
+//         groupId: 'searchService'
+//         dnsZoneName: 'privatelink.search.windows.net'
+//         resourceIds: [searchService.outputs.id]
+//       }
+//       {
+//         groupId: 'sites'
+//         dnsZoneName: 'privatelink.azurewebsites.net'
+//         resourceIds: [backend.outputs.id]
+//       }
+//       {
+//         groupId: 'sql'
+//         dnsZoneName: 'privatelink.documents.azure.com'
+//         resourceIds: (useAuthentication && useChatHistoryCosmos) ? [cosmosDb.outputs.resourceId] : []
+//       }
+//     ]
+//   : []
 
-var privateEndpointConnections = concat(otherPrivateEndpointConnections, openAiPrivateEndpointConnection)
+// var privateEndpointConnections = concat(otherPrivateEndpointConnections, openAiPrivateEndpointConnection)
 
-module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint && deploymentTarget == 'appservice') {
-  name: 'privateEndpoints'
-  scope: resourceGroup
-  params: {
-    location: location
-    tags: tags
-    resourceToken: resourceToken
-    privateEndpointConnections: privateEndpointConnections
-    applicationInsightsId: useApplicationInsights ? monitoring.outputs.applicationInsightsId : ''
-    logAnalyticsWorkspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
-    vnetName: isolation.outputs.vnetName
-    vnetPeSubnetName: isolation.outputs.backendSubnetId
-  }
-}
+// module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint && deploymentTarget == 'appservice') {
+//   name: 'privateEndpoints'
+//   scope: resourceGroup
+//   params: {
+//     location: location
+//     tags: tags
+//     resourceToken: resourceToken
+//     privateEndpointConnections: privateEndpointConnections
+//     applicationInsightsId: useApplicationInsights ? monitoring.outputs.applicationInsightsId : ''
+//     logAnalyticsWorkspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
+//     vnetName: isolation.outputs.vnetName
+//     vnetPeSubnetName: isolation.outputs.backendSubnetId
+//   }
+// }
 
 // Used to read index definitions (required when using authentication)
 // https://learn.microsoft.com/azure/search/search-security-rbac
@@ -1317,7 +1343,8 @@ output AZURE_AI_CHAT_MODEL_NAME string = chatModelName
 output AZURE_OPENAI_GPT4V_MODEL string = gpt4v.modelName
 
 // Specific to Azure OpenAI
-output AZURE_AISERVICES_NAME string = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesName : ''
+output AZURE_AI_SERVICE_NAME string = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServiceName : ''
+//output AZURE_AISERVICES_NAMES array = isAzureOpenAiHost && deployAzureOpenAi ? ai.outputs.aiServicesNames : []
 output AZURE_AI_CHAT_MODEL_VERSION string = isAzureOpenAiHost ? azureOpenAiApiVersion : ''
 output AZURE_AI_CHAT_DEPLOYMENT_NAME string = isAzureOpenAiHost ? chatDeploymentName : ''
 output AZURE_AI_EMBED_DEPLOYMENT_NAME string = isAzureOpenAiHost ?  embeddingDeploymentName  : ''
@@ -1361,3 +1388,9 @@ output BACKEND_URI string = deploymentTarget == 'appservice' ? backend.outputs.u
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = deploymentTarget == 'containerapps'
   ? containerApps.outputs.registryLoginServer
   : ''
+
+// TODO if multiple AI Services
+// output aiServicesNames array = ai.outputs.aiServicesNames
+// output aiServicesConnectionNames array = ai.outputs.aiServicesConnectionNames
+// output cognitiveServicesResourceIds array = ai.outputs.cognitiveServicesResourceIds
+// output aiServicesConnectionIds array = ai.outputs.aiServicesConnectionIds

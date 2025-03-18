@@ -422,7 +422,8 @@ async def setup_clients():
     AZURE_AI_EMBED_MODEL_NAME = os.getenv("AZURE_AI_EMBED_MODEL_NAME", "text-embedding-ada-002")
     AZURE_AI_EMBED_DIMENSIONS = int(os.getenv("AZURE_AI_EMBED_DIMENSIONS") or 1536)
     # Used with Azure OpenAI deployments
-    AZURE_AISERVICES_NAME = os.getenv("AZURE_AISERVICES_NAME")
+    AZURE_AI_SERVICE_NAME = os.getenv("AZURE_AI_SERVICE_NAME")
+    AZURE_AISERVICES_NAMES = os.getenv("AZURE_AISERVICES_NAMES")
     AZURE_OPENAI_GPT4V_DEPLOYMENT = os.environ.get("AZURE_OPENAI_GPT4V_DEPLOYMENT")
     AZURE_OPENAI_GPT4V_MODEL = os.environ.get("AZURE_OPENAI_GPT4V_MODEL")
     AZURE_AI_CHAT_DEPLOYMENT_NAME = (
@@ -559,7 +560,7 @@ async def setup_clients():
             azure_credential=azure_credential,
             openai_host=OPENAI_HOST,
             openai_model_name=AZURE_AI_EMBED_MODEL_NAME,
-            openai_service=AZURE_AISERVICES_NAME,
+            openai_service=AZURE_AI_SERVICE_NAME,
             openai_custom_url=AZURE_OPENAI_CUSTOM_URL,
             openai_deployment=AZURE_AI_EMBED_DEPLOYMENT_NAME,
             openai_dimensions=AZURE_AI_EMBED_DIMENSIONS,
@@ -596,9 +597,9 @@ async def setup_clients():
             endpoint = AZURE_OPENAI_CUSTOM_URL
         else:
             current_app.logger.info("OPENAI_HOST is azure, setting up Azure OpenAI client")
-            if not AZURE_AISERVICES_NAME:
-                raise ValueError("AZURE_AISERVICES_NAME must be set when OPENAI_HOST is azure")
-            endpoint = f"https://{AZURE_AISERVICES_NAME}.openai.azure.com"
+            if not AZURE_AI_SERVICE_NAME:
+                raise ValueError("AZURE_AI_SERVICE_NAME must be set when OPENAI_HOST is azure")
+            endpoint = f"https://{AZURE_AI_SERVICE_NAME}.openai.azure.com"
         if api_key := os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE"):
             current_app.logger.info("AZURE_OPENAI_API_KEY_OVERRIDE found, using as api_key for Azure OpenAI client")
             openai_client = AsyncAzureOpenAI(

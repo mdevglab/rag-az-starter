@@ -5,8 +5,13 @@ param tags object = {}
 param keyVaultName string
 @description('Name of the storage account')
 param storageAccountName string
-@description('Name of the AI Service')
-param aiServicesName string
+
+@description('The AI Service resource location.')
+param aiServiceLocation string
+@description('Names of the AI Services')
+param aiServiceName string
+// @description('Names of the AI Services')
+// param aiServicesNames array = []
 @description('Array of OpenAI model deployments')
 param aiServiceModelDeployments array = []
 @description('Name of the Log Analytics workspace')
@@ -17,6 +22,10 @@ param applicationInsightsName string = ''
 param containerRegistryName string = ''
 @description('Name of the Azure Cognitive Search service')
 param searchServiceName string = ''
+
+// @description('Embed Deployment Location')
+// param embedDeploymentLocation string
+
 
 module keyVault '../security/keyvault.bicep' = {
   name: 'keyvault'
@@ -124,27 +133,61 @@ module containerRegistry '../host/container-registry.bicep' =
     }
   }
 
-module cognitiveServices '../ai/cognitiveservices.bicep' = {
+module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if empty
   name: 'cognitiveServices'
   params: {
-    location: location
+    location: aiServiceLocation
     tags: tags
-    name: aiServicesName
+    name: aiServiceName
     kind: 'AIServices'
     deployments: aiServiceModelDeployments
   }
 }
 
-module searchService '../search/search-services.bicep' =
-  if (!empty(searchServiceName)) {
-    name: 'searchService'
-    params: {
-      location: location
-      tags: tags
-      name: searchServiceName
-      authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
-    }
-  }
+
+
+// module searchService '../search/search-services.bicep' =
+//   if (!empty(searchServiceName)) {
+//     name: 'searchService'
+//     params: {
+//       location: location
+//       tags: tags
+//       name: searchServiceName
+//       authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
+//     }
+//   }
+
+  // module searchService 'core/search/search-services.bicep' = {
+  //   name: 'search-service'
+  //   scope: searchServiceResourceGroup
+  //   params: {
+  //     name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
+  //     location: !empty(searchServiceLocation) ? searchServiceLocation : location
+  //     tags: tags
+  //     disableLocalAuth: true
+  //     sku: {
+  //       name: searchServiceSkuName
+  //     }
+  //     semanticSearch: actualSearchServiceSemanticRankerLevel
+  //     publicNetworkAccess: publicNetworkAccess == 'Enabled'
+  //       ? 'enabled'
+  //       : (publicNetworkAccess == 'Disabled' ? 'disabled' : null)
+  //     sharedPrivateLinkStorageAccounts: usePrivateEndpoint ? [storage.outputs.id] : []
+  //   }
+  // }
+
+// resource cognitiveServicesResources 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for aiServiceName in aiServicesNames: {
+//   name: aiServiceName
+//   location: location
+//   tags: tags
+//   sku: {
+//     name: 'S0'
+//   }
+//   kind: 'AIServices'
+//   properties: {
+//     customSubDomainName: aiServiceName
+//   }
+// }]  
 
 output keyVaultId string = keyVault.outputs.id
 output keyVaultName string = keyVault.outputs.name
@@ -163,9 +206,19 @@ output logAnalyticsWorkspaceId string = !empty(logAnalyticsName) ? logAnalytics.
 output logAnalyticsWorkspaceName string = !empty(logAnalyticsName) ? logAnalytics.outputs.name : ''
 
 output aiServiceId string = cognitiveServices.outputs.id
-output aiServicesName string = cognitiveServices.outputs.name
+output aiServiceName string = cognitiveServices.outputs.name
 output aiServiceEndpoint string = cognitiveServices.outputs.endpoints['OpenAI Language Model Instance API']
 
-output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
-output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''
-output searchServiceEndpoint string = !empty(searchServiceName) ? searchService.outputs.endpoint : ''
+// output aiEmbedServiceId string = cognitiveServicesEmbed.outputs.id
+// output aiEmbedServicesName string = cognitiveServicesEmbed.outputs.name
+// output aiEmbedServiceEndpoint string = cognitiveServicesEmbed.outputs.endpoints['OpenAI Language Model Instance API']
+
+
+// si on fait multiple service
+//output aiServicesNames array = aiServicesNames
+//output cognitiveServicesResourceIds array = [for resource in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts@2023-05-01', resource.id)]
+
+
+// output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
+// output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''
+// output searchServiceEndpoint string = !empty(searchServiceName) ? searchService.outputs.endpoint : ''

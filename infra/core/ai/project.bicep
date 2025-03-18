@@ -14,7 +14,7 @@ param skuTier string = 'Basic'
 @allowed(['Enabled','Disabled'])
 param publicNetworkAccess string = 'Enabled'
 
-param location string = resourceGroup().location
+param location string
 param tags object = {}
 
 resource project 'Microsoft.MachineLearningServices/workspaces@2024-01-01-preview' = {

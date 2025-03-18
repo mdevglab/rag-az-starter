@@ -26,15 +26,20 @@ param skuTier string = 'Basic'
 @allowed(['Enabled','Disabled'])
 param publicNetworkAccess string = 'Enabled'
 
-@description('The AI Services account name to use for the AI Foundry Hub Resource')
-param aiServicesName string
+
+@description('The AI Service account name to use for the AI Foundry Hub Resource')
+param aiServiceName string
 @description('The AI Services connection name to use for the AI Foundry Hub Resource')
 param aiServicesConnectionName string
+// @description('The AI Services account name to use for the AI Foundry Hub Resource')
+// param aiServicesNames array = []
+// @description('The AI Services connection name to use for the AI Foundry Hub Resource')
+// param aiServicesConnectionNames array = []
 @description('The AI Services Content Safety connection name to use for the AI Foundry Hub Resource')
 param aiServicesContentSafetyConnectionName string
 
 
-param location string = resourceGroup().location
+param location string
 param tags object = {}
 
 resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' = {
@@ -62,6 +67,26 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' =
     v1LegacyMode: false
     publicNetworkAccess: publicNetworkAccess
   }
+
+  // TODO if multiple AI services
+  // resource aiServiceConnections 'connections' =  [for aiServiceName in aiServicesNames: {
+  //   name: '${aiServiceName}-connection'
+  //   //location: location
+  //   properties: {
+  //     category: 'AIServices'
+  //     authType: 'ApiKey'
+  //     isSharedToAll: true
+  //     target: reference(resourceId('Microsoft.CognitiveServices/accounts', aiServiceName)).properties.endpoint
+  //     metadata: {
+  //       ApiVersion: '2023-07-01-preview'
+  //       ApiType: 'azure'
+  //       ResourceId: resourceId('Microsoft.CognitiveServices/accounts', aiServiceName)
+  //     }
+  //     credentials: {
+  //       key: listKeys(resourceId('Microsoft.CognitiveServices/accounts', aiServiceName), '2023-05-01').key1
+  //     }
+  //   }
+  // }]
 
   resource aiServiceConnection 'connections' = {
     name: aiServicesConnectionName
@@ -116,8 +141,10 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' =
 }
 
 resource aiService 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: aiServicesName
+  name: aiServiceName
 }
+
+
 
 resource search 'Microsoft.Search/searchServices@2021-04-01-preview' existing =
   if (!empty(aiSearchName)) {
@@ -126,5 +153,8 @@ resource search 'Microsoft.Search/searchServices@2021-04-01-preview' existing =
 
 output name string = hub.name
 output id string = hub.id
-output aiServiceRessourceId string = aiService.id
 output principalId string = hub.identity.principalId
+
+// output aiServicesConnectionNames array = [for service in aiServicesNames: '${service}-connection']
+// output aiServicesConnectionIds array = [for aiService in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts', aiService.id)]
+// output aiServiceResourceIds array = [for aiService in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts', aiService.id)]

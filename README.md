@@ -1,14 +1,14 @@
 <!--
 ---
 name: RAG chat app with your data (Python)
-description: Chat with your domain data using Azure OpenAI and Azure AI Search.
+description: Chat with your domain data using Azure AI Services and Azure AI Search.
 languages:
 - python
 - typescript
 - bicep
 - azdeveloper
 products:
-- azure-openai
+- azure-ai-services
 - azure-cognitive-search
 - azure-app-service
 - azure
@@ -17,14 +17,16 @@ urlFragment: azure-search-openai-demo
 ---
 -->
 
-# RAG chat app with Azure OpenAI and Azure AI Search (Python)
+# RAG chat app with Azure AI Services and Azure AI Search (Python)
+
+Ceci est un fork du projet template de Microsoft [suivant](https://github.com/Azure-Samples/azure-search-openai-demo). L'adapation consiste à changer l'usage sur service d'IA soit remplacer OpenAI Service par Azure AI Service et y inclure la création d'un projet (Foundry) ainsi que le hub et ses connections.
 
 This solution creates a ChatGPT-like frontend experience over your own documents using RAG (Retrieval Augmented Generation). It uses Azure OpenAI Service to access GPT models, and Azure AI Search for data indexing and retrieval.
 
-This solution's backend is written in Python. There are also [**JavaScript**](https://aka.ms/azai/js/code), [**.NET**](https://aka.ms/azai/net/code), and [**Java**](https://aka.ms/azai/java/code) samples based on this one. Learn more about [developing AI apps using Azure AI Services](https://aka.ms/azai).
+This solution's backend is written in Python. Learn more about [developing AI apps using Azure AI Services](https://aka.ms/azai).
 
-[![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=brightgreen&logo=github)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=599293758&machine=standardLinux32gb&devcontainer_path=.devcontainer%2Fdevcontainer.json&location=WestUs2)
-[![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
+
+[![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/mdevglab/rag-az-starter/)
 
 ## Important Security Notice
 
@@ -36,7 +38,6 @@ This template, the application code and configuration it contains, has been buil
 - [Azure account requirements](#azure-account-requirements)
   - [Cost estimation](#cost-estimation)
 - [Getting Started](#getting-started)
-  - [GitHub Codespaces](#github-codespaces)
   - [VS Code Dev Containers](#vs-code-dev-containers)
   - [Local environment](#local-environment)
 - [Deploying](#deploying)
@@ -108,13 +109,6 @@ You have a few options for setting up this project.
 The easiest way to get started is GitHub Codespaces, since it will setup all the tools for you,
 but you can also [set it up locally](#local-environment) if desired.
 
-### GitHub Codespaces
-
-You can run this repo virtually by using GitHub Codespaces, which will open a web-based VS Code in your browser:
-
-[![Open in GitHub Codespaces](https://img.shields.io/static/v1?style=for-the-badge&label=GitHub+Codespaces&message=Open&color=brightgreen&logo=github)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=599293758&machine=standardLinux32gb&devcontainer_path=.devcontainer%2Fdevcontainer.json&location=WestUs2)
-
-Once the codespace opens (this may take several minutes), open a terminal window.
 
 ### VS Code Dev Containers
 
@@ -122,7 +116,7 @@ A related option is VS Code Dev Containers, which will open the project in your 
 
 1. Start Docker Desktop (install it if not already installed)
 2. Open the project:
-    [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/azure-samples/azure-search-openai-demo)
+    [![Open in Dev Containers](https://img.shields.io/static/v1?style=for-the-badge&label=Dev%20Containers&message=Open&color=blue&logo=visualstudiocode)](https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/mdevglab/rag-az-starter/)
 
 3. In the VS Code window that opens, once the project files show up (this may take several minutes), open a terminal window.
 
