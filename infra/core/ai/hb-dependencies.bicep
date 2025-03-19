@@ -8,6 +8,28 @@ param storageAccountName string
 
 @description('The AI Service resource location.')
 param aiServiceLocation string
+
+@description('The Search Service resource location.')
+param searchServiceLocation string
+
+@allowed([ 'Enabled', 'Disabled' ])
+param publicNetworkAccess string = 'Enabled'
+
+@description('The Search resource group id.')
+param searchServiceResourceGroupId string
+
+@description('The Azure Search service sku name.')
+param searchServiceSkuName string
+
+@description('The Search service semantic ranker level.')
+param actualSearchServiceSemanticRankerLevel string
+
+@description('Add a private endpoints for network connectivity')
+param usePrivateEndpoint bool = false
+
+@description('The storage output id')
+param storageId string
+
 @description('Names of the AI Services')
 param aiServiceName string
 // @description('Names of the AI Services')
@@ -144,8 +166,6 @@ module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if
   }
 }
 
-
-
 // module searchService '../search/search-services.bicep' =
 //   if (!empty(searchServiceName)) {
 //     name: 'searchService'
@@ -157,24 +177,25 @@ module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if
 //     }
 //   }
 
-  // module searchService 'core/search/search-services.bicep' = {
-  //   name: 'search-service'
-  //   scope: searchServiceResourceGroup
-  //   params: {
-  //     name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
-  //     location: !empty(searchServiceLocation) ? searchServiceLocation : location
-  //     tags: tags
-  //     disableLocalAuth: true
-  //     sku: {
-  //       name: searchServiceSkuName
-  //     }
-  //     semanticSearch: actualSearchServiceSemanticRankerLevel
-  //     publicNetworkAccess: publicNetworkAccess == 'Enabled'
-  //       ? 'enabled'
-  //       : (publicNetworkAccess == 'Disabled' ? 'disabled' : null)
-  //     sharedPrivateLinkStorageAccounts: usePrivateEndpoint ? [storage.outputs.id] : []
-  //   }
-  // }
+module searchService '../search/search-services.bicep' = 
+  if (!empty(searchServiceName)) {
+    name: 'search-service'
+    //scope: resourceGroup(searchServiceResourceGroupId)
+    params: {
+      name: searchServiceName
+      location: searchServiceLocation
+      tags: tags
+      disableLocalAuth: true
+      sku: {
+        name: searchServiceSkuName
+      }
+      semanticSearch: actualSearchServiceSemanticRankerLevel
+      publicNetworkAccess: publicNetworkAccess == 'Enabled'
+        ? 'enabled'
+        : (publicNetworkAccess == 'Disabled' ? 'disabled' : null)
+      sharedPrivateLinkStorageAccounts: usePrivateEndpoint ? [storageId] : []
+    }
+  }
 
 // resource cognitiveServicesResources 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for aiServiceName in aiServicesNames: {
 //   name: aiServiceName
@@ -219,6 +240,8 @@ output aiServiceEndpoint string = cognitiveServices.outputs.endpoints['OpenAI La
 //output cognitiveServicesResourceIds array = [for resource in aiServicesNames: resourceId('Microsoft.CognitiveServices/accounts@2023-05-01', resource.id)]
 
 
-// output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
-// output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''
-// output searchServiceEndpoint string = !empty(searchServiceName) ? searchService.outputs.endpoint : ''
+output searchServiceId string = !empty(searchServiceName) ? searchService.outputs.id : ''
+output searchServiceName string = !empty(searchServiceName) ? searchService.outputs.name : ''
+output searchServiceEndpoint string = !empty(searchServiceName) ? searchService.outputs.endpoint : ''
+
+output searchServicePrincipalId string = searchService.outputs.principalId

@@ -12,6 +12,11 @@ param storageAccountName string
 @minLength(1)
 @description('The AI Service resource location.')
 param aiServiceLocation string
+
+@minLength(1)
+@description('The Search Service resource location.')
+param searchServiceLocation string
+
 @description('The AI Service resource name.')
 param aiServiceName string
 @description('The AI Services connection name.')
@@ -34,6 +39,25 @@ param containerRegistryName string = ''
 
 @description('The Azure Search resource name.')
 param searchServiceName string
+
+@description('The Search resource group id.')
+param searchServiceResourceGroupId string
+
+@description('The Azure Search service sku name.')
+param searchServiceSkuName string
+
+@description('The Search service semantic ranker level.')
+param actualSearchServiceSemanticRankerLevel string
+
+@allowed([ 'Enabled', 'Disabled' ])
+param publicNetworkAccess string = 'Enabled'
+
+@description('Add a private endpoints for network connectivity')
+param usePrivateEndpoint bool = false
+
+@description('The storage output id')
+param storageId string
+
 @description('The Azure Search connection name.')
 param searchConnectionName string = ''
 param tags object = {}
@@ -42,6 +66,7 @@ module hubDependencies './hb-dependencies.bicep' = {
   name: 'hubDependencies'
   params: {
     aiServiceLocation: aiServiceLocation
+    searchServiceLocation: searchServiceLocation
     tags: tags
     keyVaultName: keyVaultName
     storageAccountName: storageAccountName
@@ -52,6 +77,12 @@ module hubDependencies './hb-dependencies.bicep' = {
     aiServiceName: aiServiceName
     aiServiceModelDeployments: aiServiceModelDeployments
     searchServiceName: searchServiceName
+    publicNetworkAccess: publicNetworkAccess
+    searchServiceResourceGroupId : searchServiceResourceGroupId
+    searchServiceSkuName: searchServiceSkuName
+    actualSearchServiceSemanticRankerLevel: actualSearchServiceSemanticRankerLevel
+    usePrivateEndpoint: usePrivateEndpoint
+    storageId: storageId
   }
 }
 
@@ -71,7 +102,7 @@ module hub './hub.bicep' = {
     //aiServicesNames: hubDependencies.outputs.aiServicesNames
     //aiServicesConnectionNames: aiServicesConnectionNames
     aiServicesContentSafetyConnectionName: aiServicesContentSafetyConnectionName
-    aiSearchName: searchServiceName
+    aiSearchName: hubDependencies.outputs.searchServiceName
     aiSearchConnectionName: searchConnectionName
   }
 }
@@ -125,8 +156,10 @@ output aiServiceEndpoint string = hubDependencies.outputs.aiServiceEndpoint
 // output aiServicesConnectionIds array = hub.outputs.aiServicesConnectionIds
 
 // Search
-// output searchServiceName string = hubDependencies.outputs.searchServiceName
-// output searchServiceEndpoint string = hubDependencies.outputs.searchServiceEndpoint
+output searchServiceName string = hubDependencies.outputs.searchServiceName
+output searchServiceEndpoint string = hubDependencies.outputs.searchServiceEndpoint
+output searchServicePrincipalId string = hubDependencies.outputs.searchServicePrincipalId
+
 
 //Discoveryurl
 output discoveryUrl string = project.outputs.discoveryUrl
