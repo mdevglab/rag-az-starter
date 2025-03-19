@@ -23,6 +23,21 @@ Ceci est un fork du projet template de Microsoft [suivant](https://github.com/Az
 
 Attention : vérifier les quotas pour les modèles avant de faire la provision. `az cognitiveservices usage list --location <your-selected-location>`  au besoin purger les soft-deleted.
 
+---
+
+
+### Document ingestion manuel
+
+Mettre les fichiers (PDF, HTML, etc.) dans le dossier `/data` .  
+Run `bash ./scripts/prepdocs.sh` ou  windows `./scripts/prepdocs.ps1`
+
+[Plus d'informations](/docs/data_ingestion.md)
+
+
+
+---
+
+
 This solution creates a ChatGPT-like frontend experience over your own documents using RAG (Retrieval Augmented Generation). It uses Azure OpenAI Service to access GPT models, and Azure AI Search for data indexing and retrieval.
 
 This solution's backend is written in Python. Learn more about [developing AI apps using Azure AI Services](https://aka.ms/azai).

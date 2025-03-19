@@ -1,6 +1,6 @@
 {
-    "pageTitle": "Azure OpenAI + AI Search",
-    "headerTitle": "Azure OpenAI + AI Search",
+    "pageTitle": "Chat avec documents",
+    "headerTitle": "Chat avec documents",
     "chat": "Chat",
     "qa": "Posez une question",
     "login": "Connexion",
@@ -37,10 +37,10 @@
     "chatEmptyStateTitle": "Discutez avec vos données",
     "chatEmptyStateSubtitle": "Demandez n'importe quoi ou essayez un exemple",
     "defaultExamples": {
-        "1": "Qu'est-ce qui est inclus dans mon plan Northwind Health Plus qui n'est pas dans le standard?",
-        "2": "Qu'arrive-t-il lors d'un examen de performance?",
-        "3": "Qu'est-ce qu'un Product Manager fait?",
-        "placeholder": "Tapez une nouvelle question (par exemple, mon plan couvre-t-il les examens oculaires annuels?)"
+        "1": "Donner des information à propos de skateboard?",
+        "2": "Donner des information à propos de longboard?",
+        "3": "Un grand master de quoi ?",
+        "placeholder": "Vous conseillez le longboard ou le stakeboard?)"
     },
     "askTitle": "Demandez à vos données",
     "gpt4vExamples": {

@@ -1,6 +1,6 @@
 {
-    "pageTitle": "Azure OpenAI + AI Search",
-    "headerTitle": "Azure OpenAI + AI Search",
+    "pageTitle": "Chat with documents",
+    "headerTitle": "Chat with documents",
     "chat": "Chat",
     "qa": "Ask a question",
     "login": "Login",
@@ -38,8 +38,8 @@
     "chatEmptyStateSubtitle": "Ask anything or try an example",
     "defaultExamples": {
         "1": "What about skateboarding?",
-        "2": "Parlez moi du longboard",
-        "3": "Grand master of what ?",
+        "2": "What about longboard?",
+        "3": "Grand master of what?",
         "placeholder": "Type a new question (e.g. do skateboarding is better than longboarding?)"
     },
     "askTitle": "Ask your data",
