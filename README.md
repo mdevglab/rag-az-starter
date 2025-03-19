@@ -21,6 +21,8 @@ urlFragment: azure-search-openai-demo
 
 Ceci est un fork du projet template de Microsoft [suivant](https://github.com/Azure-Samples/azure-search-openai-demo). L'adapation consiste à changer l'usage sur service d'IA soit remplacer OpenAI Service par Azure AI Service et y inclure la création d'un projet (Foundry) ainsi que le hub et ses connections.
 
+Attention : vérifier les quotas pour les modèles avant de faire la provision. `az cognitiveservices usage list --location <your-selected-location>`  au besoin purger les soft-deleted.
+
 This solution creates a ChatGPT-like frontend experience over your own documents using RAG (Retrieval Augmented Generation). It uses Azure OpenAI Service to access GPT models, and Azure AI Search for data indexing and retrieval.
 
 This solution's backend is written in Python. Learn more about [developing AI apps using Azure AI Services](https://aka.ms/azai).

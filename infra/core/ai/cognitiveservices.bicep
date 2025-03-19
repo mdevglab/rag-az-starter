@@ -17,10 +17,11 @@ param publicNetworkAccess string = 'Enabled'
 param sku object = {
   name: 'S0'
 }
-
+param bypass string = 'AzureServices'
 param allowedIpRules array = []
 param networkAcls object = empty(allowedIpRules) ? {
   defaultAction: 'Allow'
+  bypass: bypass
 } : {
   ipRules: allowedIpRules
   defaultAction: 'Deny'

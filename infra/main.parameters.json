@@ -21,7 +21,7 @@
       "value": "${AZURE_RESOURCE_GROUP}"
     },
     "location": {
-      "value": "${AZURE_LOCATION=eastus2}"
+      "value": "${AZURE_LOCATION=canadaeast}"
     },
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
@@ -309,7 +309,7 @@
       "value": "${USE_AI_PROJECT=true}"
     },
     "aiServiceLocation": {
-      "value": "${AZURE_AI_SERVICE_LOCATION=eastus2}"
+      "value": "${AZURE_AI_SERVICE_LOCATION=canadaeast}"
     },
     "chatDeploymentName": {
       "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o-mini-dep-chat}"
@@ -324,10 +324,10 @@
       "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-07-18}"
     },
     "chatDeploymentSku": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=Standard}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=GlobalStandard}"
     },
     "chatDeploymentLocation": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_LOCATION=eastus2}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_LOCATION=canadaeast}"
     },
     "chatDeploymentCapacity": {
       "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=8}"
@@ -348,13 +348,13 @@
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_SKU=Standard}"
     },
     "embedDeploymentLocation": {
-      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=eastus2}"
+      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=canadaeast}"
     },
     "embedDeploymentCapacity": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_CAPACITY=30}"
     },
     "embeddingDeploymentDimensions": {
-      "value": "${AZURE_AI_EMBED_DIMENSIONS=100}"
+      "value": "${AZURE_AI_EMBED_DIMENSIONS=1536}"
     },
     "apiAppExists": {
       "value": "${SERVICE_API_RESOURCE_EXISTS=false}"
