@@ -192,9 +192,13 @@ param embedModelName string
 @description('Name of the embedding model deployment')
 param embeddingDeploymentName string
 
-@allowed(['eastus', 'eastus2'])
+@allowed(['eastus', 'eastus2', 'canadaeast'])
 @description('Location of the embeddings model deployment')
 param embedDeploymentLocation string
+
+//@allowed(['eastus', 'eastus2', 'canadaeast'])
+@description('Location of the embeddings model deployment')
+param chatDeploymentLocation string
 
 @description('Embedding model dimensionality')
 param embeddingDeploymentDimensions string
@@ -395,9 +399,9 @@ var containerRegistryResolvedName = !useContainerRegistry
 
 var aiChatModel = [
   {
-    accountName: 'account1'
+    //accountName: 'account1'
     name: chatDeploymentName
-    location: location
+    location: chatDeploymentLocation
     model: {
       format: chatModelFormat
       name: chatModelName
@@ -411,7 +415,7 @@ var aiChatModel = [
 ]
 var aiEmbeddingModel = [ 
   {
-    accountName: 'account2'
+    //accountName: 'account2'
     name: embeddingDeploymentName
     location: embedDeploymentLocation // to check , not sure it's pickingup
     model: {
@@ -426,11 +430,10 @@ var aiEmbeddingModel = [
   }
 ]
 
-// No deployment via infra ( probleme gestion capacite par location )
-// var aiDeployments = concat(
-//   aiChatModel, aiEmbeddingModel)
+var aiDeployments = concat(
+  aiChatModel, aiEmbeddingModel)
 
-  var aiDeployments = []
+
 
 // Monitor application with Azure Monitor
 module monitoring 'core/monitor/monitoring.bicep' = if (useApplicationInsights) {
@@ -664,40 +667,40 @@ module acaAuth 'core/host/container-apps-auth.bicep' = if (deploymentTarget == '
 }
 
 
-// var openAiDeployments = concat(
-//   aiDeployments,
-//   useEval
-//     ? [
-//       {
-//         name: eval.deploymentName
-//         model: {
-//           format: 'OpenAI'
-//           name: eval.modelName
-//           version: eval.deploymentVersion
-//         }
-//         sku: {
-//           name: eval.deploymentSkuName
-//           capacity: eval.deploymentCapacity
-//         }
-//       }
-//     ] : [],
-//   useGPT4V
-//     ? [
-//         {
-//           name: gpt4v.deploymentName
-//           model: {
-//             format: 'OpenAI'
-//             name: gpt4v.modelName
-//             version: gpt4v.deploymentVersion
-//           }
-//           sku: {
-//             name: gpt4v.deploymentSkuName
-//             capacity: gpt4v.deploymentCapacity
-//           }
-//         }
-//       ]
-//     : []
-// )
+var openAiDeployments = concat(
+  aiDeployments,
+  useEval
+    ? [
+      {
+        name: eval.deploymentName
+        model: {
+          format: 'OpenAI'
+          name: eval.modelName
+          version: eval.deploymentVersion
+        }
+        sku: {
+          name: eval.deploymentSkuName
+          capacity: eval.deploymentCapacity
+        }
+      }
+    ] : [],
+  useGPT4V
+    ? [
+        {
+          name: gpt4v.deploymentName
+          model: {
+            format: 'OpenAI'
+            name: gpt4v.modelName
+            version: gpt4v.deploymentVersion
+          }
+          sku: {
+            name: gpt4v.deploymentSkuName
+            capacity: gpt4v.deploymentCapacity
+          }
+        }
+      ]
+    : []
+)
 
 // module openAi 'br/public:avm/res/cognitive-services/account:0.7.2' = if (isAzureOpenAiHost && deployAzureOpenAi) {
 //   name: 'openai'

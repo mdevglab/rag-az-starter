@@ -146,36 +146,6 @@ module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if
 
 
 
-// module searchService '../search/search-services.bicep' =
-//   if (!empty(searchServiceName)) {
-//     name: 'searchService'
-//     params: {
-//       location: location
-//       tags: tags
-//       name: searchServiceName
-//       authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
-//     }
-//   }
-
-  // module searchService 'core/search/search-services.bicep' = {
-  //   name: 'search-service'
-  //   scope: searchServiceResourceGroup
-  //   params: {
-  //     name: !empty(searchServiceName) ? searchServiceName : 'gptkb-${resourceToken}'
-  //     location: !empty(searchServiceLocation) ? searchServiceLocation : location
-  //     tags: tags
-  //     disableLocalAuth: true
-  //     sku: {
-  //       name: searchServiceSkuName
-  //     }
-  //     semanticSearch: actualSearchServiceSemanticRankerLevel
-  //     publicNetworkAccess: publicNetworkAccess == 'Enabled'
-  //       ? 'enabled'
-  //       : (publicNetworkAccess == 'Disabled' ? 'disabled' : null)
-  //     sharedPrivateLinkStorageAccounts: usePrivateEndpoint ? [storage.outputs.id] : []
-  //   }
-  // }
-
 // resource cognitiveServicesResources 'Microsoft.CognitiveServices/accounts@2023-05-01' = [for aiServiceName in aiServicesNames: {
 //   name: aiServiceName
 //   location: location

@@ -21,7 +21,7 @@
       "value": "${AZURE_RESOURCE_GROUP}"
     },
     "location": {
-      "value": "${AZURE_LOCATION=caneast}"
+      "value": "${AZURE_LOCATION=eastus2}"
     },
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
@@ -309,7 +309,7 @@
       "value": "${USE_AI_PROJECT=true}"
     },
     "aiServiceLocation": {
-      "value": "${AZURE_AI_SERVICE_LOCATION=eastus}"
+      "value": "${AZURE_AI_SERVICE_LOCATION=eastus2}"
     },
     "chatDeploymentName": {
       "value": "${AZURE_AI_CHAT_DEPLOYMENT_NAME=gpt-4o-mini-dep-chat}"
@@ -324,13 +324,13 @@
       "value": "${AZURE_AI_CHAT_MODEL_VERSION=2024-07-18}"
     },
     "chatDeploymentSku": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=GlobalStandard}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_SKU=Standard}"
     },
     "chatDeploymentLocation": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_LOCATION=eastus}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_LOCATION=eastus2}"
     },
     "chatDeploymentCapacity": {
-      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=30}"
+      "value": "${AZURE_AI_CHAT_DEPLOYMENT_CAPACITY=8}"
     },
     "embeddingDeploymentName": {
       "value": "${AZURE_AI_EMBED_MODEL_NAME=text-embedding-SMALL}"
@@ -348,7 +348,7 @@
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_SKU=Standard}"
     },
     "embedDeploymentLocation": {
-      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=eastus}"
+      "value": "${AZURE_AI_EMBED_DEPLOYMENT_LOCATION=eastus2}"
     },
     "embedDeploymentCapacity": {
       "value": "${AZURE_AI_EMBED_DEPLOYMENT_CAPACITY=30}"
