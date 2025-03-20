@@ -2,6 +2,9 @@
 .azure
 *_env
 
+# Data Context Files
+data/files/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
