@@ -34,6 +34,9 @@ param aiServicesContentSafetyConnectionName string
 param logAnalyticsName string = ''
 @description('The Application Insights resource name.')
 param applicationInsightsName string = ''
+@description('The Application Insights resource id.')
+param applicationInsightsId string 
+
 @description('The Container Registry resource name.')
 param containerRegistryName string = ''
 
@@ -96,7 +99,7 @@ module hub './hub.bicep' = {
     keyVaultId: hubDependencies.outputs.keyVaultId
     storageAccountId: hubDependencies.outputs.storageAccountId
     containerRegistryId: hubDependencies.outputs.containerRegistryId
-    applicationInsightsId: hubDependencies.outputs.applicationInsightsId
+    applicationInsightsId: applicationInsightsId //hubDependencies.outputs.applicationInsightsId
     aiServiceName: hubDependencies.outputs.aiServiceName
     aiServicesConnectionName: aiServicesConnectionName
     //aiServicesNames: hubDependencies.outputs.aiServicesNames
@@ -136,8 +139,8 @@ output keyVaultName string = hubDependencies.outputs.keyVaultName
 output keyVaultEndpoint string = hubDependencies.outputs.keyVaultEndpoint
 
 // Application Insights
-output applicationInsightsName string = hubDependencies.outputs.applicationInsightsName
-output logAnalyticsWorkspaceName string = hubDependencies.outputs.logAnalyticsWorkspaceName
+// output applicationInsightsName string = hubDependencies.outputs.applicationInsightsName
+// output logAnalyticsWorkspaceName string = hubDependencies.outputs.logAnalyticsWorkspaceName
 
 // Container Registry
 output containerRegistryName string = hubDependencies.outputs.containerRegistryName
@@ -149,6 +152,7 @@ output storageAccountName string = hubDependencies.outputs.storageAccountName
 // AI Services
 output aiServiceName string = hubDependencies.outputs.aiServiceName
 output aiServiceEndpoint string = hubDependencies.outputs.aiServiceEndpoint
+output aiServiceId string = hubDependencies.outputs.aiServiceId
 
 // output aiServicesNames array = hubDependencies.outputs.aiServicesNames
 // output aiServicesConnectionNames array = hub.outputs.aiServicesConnectionNames
@@ -159,7 +163,7 @@ output aiServiceEndpoint string = hubDependencies.outputs.aiServiceEndpoint
 output searchServiceName string = hubDependencies.outputs.searchServiceName
 output searchServiceEndpoint string = hubDependencies.outputs.searchServiceEndpoint
 output searchServicePrincipalId string = hubDependencies.outputs.searchServicePrincipalId
-
+output searchServiceId string = hubDependencies.outputs.searchServiceId
 
 //Discoveryurl
 output discoveryUrl string = project.outputs.discoveryUrl

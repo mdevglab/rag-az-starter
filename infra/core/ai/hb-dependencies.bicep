@@ -124,26 +124,26 @@ module storageAccount '../storage/storage-account.bicep' = {
   }
 }
 
-module logAnalytics '../monitor/loganalytics.bicep' =
-  if (!empty(logAnalyticsName)) {
-    name: 'logAnalytics'
-    params: {
-      location: location
-      tags: tags
-      name: logAnalyticsName
-    }
-  }
+// module logAnalytics '../monitor/loganalytics.bicep' =
+//   if (!empty(logAnalyticsName)) {
+//     name: 'logAnalytics'
+//     params: {
+//       location: location
+//       tags: tags
+//       name: logAnalyticsName
+//     }
+//   }
 
-module applicationInsights '../monitor/applicationinsights.bicep' =
-  if (!empty(applicationInsightsName) && !empty(logAnalyticsName)) {
-    name: 'applicationInsights'
-    params: {
-      location: location
-      tags: tags
-      name: applicationInsightsName
-      logAnalyticsWorkspaceId: !empty(logAnalyticsName) ? logAnalytics.outputs.id : ''
-    }
-  }
+// module applicationInsights '../monitor/applicationinsights.bicep' =
+//   if (!empty(applicationInsightsName) && !empty(logAnalyticsName)) {
+//     name: 'applicationInsights'
+//     params: {
+//       location: location
+//       tags: tags
+//       name: applicationInsightsName
+//       logAnalyticsWorkspaceId: !empty(logAnalyticsName) ? logAnalytics.outputs.id : ''
+//     }
+//   }
 
 module containerRegistry '../host/container-registry.bicep' =
   if (!empty(containerRegistryName)) {
@@ -221,10 +221,10 @@ output containerRegistryId string = !empty(containerRegistryName) ? containerReg
 output containerRegistryName string = !empty(containerRegistryName) ? containerRegistry.outputs.name : ''
 output containerRegistryEndpoint string = !empty(containerRegistryName) ? containerRegistry.outputs.loginServer : ''
 
-output applicationInsightsId string = !empty(applicationInsightsName) ? applicationInsights.outputs.id : ''
-output applicationInsightsName string = !empty(applicationInsightsName) ? applicationInsights.outputs.name : ''
-output logAnalyticsWorkspaceId string = !empty(logAnalyticsName) ? logAnalytics.outputs.id : ''
-output logAnalyticsWorkspaceName string = !empty(logAnalyticsName) ? logAnalytics.outputs.name : ''
+// output applicationInsightsId string = !empty(applicationInsightsName) ? applicationInsights.outputs.id : ''
+// output applicationInsightsName string = !empty(applicationInsightsName) ? applicationInsights.outputs.name : ''
+// output logAnalyticsWorkspaceId string = !empty(logAnalyticsName) ? logAnalytics.outputs.id : ''
+// output logAnalyticsWorkspaceName string = !empty(logAnalyticsName) ? logAnalytics.outputs.name : ''
 
 output aiServiceId string = cognitiveServices.outputs.id
 output aiServiceName string = cognitiveServices.outputs.name

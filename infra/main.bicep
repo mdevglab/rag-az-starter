@@ -111,7 +111,7 @@ param documentIntelligenceResourceGroupName string = '' // Set in main.parameter
 // Limited regions for new version:
 // https://learn.microsoft.com/azure/ai-services/document-intelligence/concept-layout
 @description('Location for the Document Intelligence resource group')
-@allowed(['eastus', 'westus2', 'westeurope'])
+@allowed(['canadaeast', 'canadacentral', 'eastus'])
 @metadata({
   azd: {
     type: 'location'
@@ -728,6 +728,7 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
     applicationInsightsName: !useApplicationInsights
       ? ''
       : !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
+    applicationInsightsId: useApplicationInsights ? monitoring.outputs.applicationInsightsId : ''
     containerRegistryName: containerRegistryResolvedName
     searchServiceName:  resolvedSearchServiceName
     searchConnectionName: !empty(searchConnectionName) ? searchConnectionName : 'search-service-connection'
@@ -1211,63 +1212,62 @@ module isolation 'network-isolation.bicep' = {
 
 var environmentData = environment()
 
-var openAiPrivateEndpointConnection =  []
-// (isAzureOpenAiHost && deployAzureOpenAi && deploymentTarget == 'appservice')
-//   ? [
-//       {
-//         groupId: 'account'
-//         dnsZoneName: 'privatelink.openai.azure.com'
-//         resourceIds: concat(
-//           [cognitiveServices.outputs.id]//[openAi.outputs.resourceId],
-//           useGPT4V ? [computerVision.outputs.resourceId] : [],
-//           useMediaDescriberAzureCU ? [contentUnderstanding.outputs.resourceId] : [],
-//           !useLocalPdfParser ? [documentIntelligence.outputs.resourceId] : []
-//         )
-//       }
-//     ]
-//   : 
+var openAiPrivateEndpointConnection = (isAzureOpenAiHost && deployAzureOpenAi && deploymentTarget == 'appservice')
+  ? [
+      {
+        groupId: 'account'
+        dnsZoneName: 'privatelink.openai.azure.com'
+        resourceIds: concat(
+          [ai.outputs.aiServiceId], //[cognitiveServices.outputs.id]//[openAi.outputs.resourceId],
+          useGPT4V ? [computerVision.outputs.resourceId] : [],
+          useMediaDescriberAzureCU ? [contentUnderstanding.outputs.resourceId] : [],
+          !useLocalPdfParser ? [documentIntelligence.outputs.resourceId] : []
+        )
+      }
+    ]
+  : []
 
-// var otherPrivateEndpointConnections = (usePrivateEndpoint && deploymentTarget == 'appservice')
-//   ? [
-//       {
-//         groupId: 'blob'
-//         dnsZoneName: 'privatelink.blob.${environmentData.suffixes.storage}'
-//         resourceIds: concat([storage.outputs.id], useUserUpload ? [userStorage.outputs.id] : [])
-//       }
-//       {
-//         groupId: 'searchService'
-//         dnsZoneName: 'privatelink.search.windows.net'
-//         resourceIds: [searchService.outputs.id]
-//       }
-//       {
-//         groupId: 'sites'
-//         dnsZoneName: 'privatelink.azurewebsites.net'
-//         resourceIds: [backend.outputs.id]
-//       }
-//       {
-//         groupId: 'sql'
-//         dnsZoneName: 'privatelink.documents.azure.com'
-//         resourceIds: (useAuthentication && useChatHistoryCosmos) ? [cosmosDb.outputs.resourceId] : []
-//       }
-//     ]
-//   : []
+var otherPrivateEndpointConnections = (usePrivateEndpoint && deploymentTarget == 'appservice')
+  ? [
+      {
+        groupId: 'blob'
+        dnsZoneName: 'privatelink.blob.${environmentData.suffixes.storage}'
+        resourceIds: concat([storage.outputs.id], useUserUpload ? [userStorage.outputs.id] : [])
+      }
+      {
+        groupId: 'searchService'
+        dnsZoneName: 'privatelink.search.windows.net'
+        resourceIds: [ai.outputs.searchServiceId] //[searchService.outputs.id]
+      }
+      {
+        groupId: 'sites'
+        dnsZoneName: 'privatelink.azurewebsites.net'
+        resourceIds: [backend.outputs.id]
+      }
+      {
+        groupId: 'sql'
+        dnsZoneName: 'privatelink.documents.azure.com'
+        resourceIds: (useAuthentication && useChatHistoryCosmos) ? [cosmosDb.outputs.resourceId] : []
+      }
+    ]
+  : []
 
-// var privateEndpointConnections = concat(otherPrivateEndpointConnections, openAiPrivateEndpointConnection)
+var privateEndpointConnections = concat(otherPrivateEndpointConnections, openAiPrivateEndpointConnection)
 
-// module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint && deploymentTarget == 'appservice') {
-//   name: 'privateEndpoints'
-//   scope: resourceGroup
-//   params: {
-//     location: location
-//     tags: tags
-//     resourceToken: resourceToken
-//     privateEndpointConnections: privateEndpointConnections
-//     applicationInsightsId: useApplicationInsights ? monitoring.outputs.applicationInsightsId : ''
-//     logAnalyticsWorkspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
-//     vnetName: isolation.outputs.vnetName
-//     vnetPeSubnetName: isolation.outputs.backendSubnetId
-//   }
-// }
+module privateEndpoints 'private-endpoints.bicep' = if (usePrivateEndpoint && deploymentTarget == 'appservice') {
+  name: 'privateEndpoints'
+  scope: resourceGroup
+  params: {
+    location: location
+    tags: tags
+    resourceToken: resourceToken
+    privateEndpointConnections: privateEndpointConnections
+    applicationInsightsId: useApplicationInsights ? monitoring.outputs.applicationInsightsId : ''
+    logAnalyticsWorkspaceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
+    vnetName: isolation.outputs.vnetName
+    vnetPeSubnetName: isolation.outputs.backendSubnetId
+  }
+}
 
 // Used to read index definitions (required when using authentication)
 // https://learn.microsoft.com/azure/search/search-security-rbac
