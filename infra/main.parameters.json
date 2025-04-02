@@ -84,7 +84,7 @@
       "value": "${AZURE_SEARCH_SERVICE_SKU=basic}"
     },
     "searchQueryLanguage": {
-      "value": "${AZURE_SEARCH_QUERY_LANGUAGE=en-us}"
+      "value": "${AZURE_SEARCH_QUERY_LANGUAGE=fr-ca}"
     },
     "searchQuerySpeller": {
       "value": "${AZURE_SEARCH_QUERY_SPELLER=lexicon}"
@@ -294,7 +294,7 @@
       "value": "${TF_BUILD}"
     },
     "deploymentTarget": {
-      "value": "${DEPLOYMENT_TARGET=appservice}"
+      "value": "${DEPLOYMENT_TARGET=containerapps}"
     },
     "webAppExists": {
         "value": "${SERVICE_WEB_RESOURCE_EXISTS=false}"

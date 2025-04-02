@@ -603,7 +603,7 @@ module containerApps 'core/host/container-apps.bicep' = if (deploymentTarget == 
     location: location
     workloadProfile: azureContainerAppsWorkloadProfile
     containerAppsEnvironmentName: acaManagedEnvironmentName
-    containerRegistryName: '${containerRegistryName}${resourceToken}'
+    containerRegistryName: containerRegistryResolvedName// '${containerRegistryName}${resourceToken}'
     logAnalyticsWorkspaceResourceId: useApplicationInsights ? monitoring.outputs.logAnalyticsWorkspaceId : ''
   }
 }
@@ -730,6 +730,7 @@ module ai 'core/ai/ai-environment.bicep' = if (empty(aiExistingProjectConnection
       : !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     applicationInsightsId: useApplicationInsights ? monitoring.outputs.applicationInsightsId : ''
     containerRegistryName: containerRegistryResolvedName
+    containerRegistryId: useContainerRegistry ? containerApps.outputs.registryId : ''
     searchServiceName:  resolvedSearchServiceName
     searchConnectionName: !empty(searchConnectionName) ? searchConnectionName : 'search-service-connection'
     publicNetworkAccess: publicNetworkAccess

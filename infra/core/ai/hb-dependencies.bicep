@@ -145,26 +145,27 @@ module storageAccount '../storage/storage-account.bicep' = {
 //     }
 //   }
 
-module containerRegistry '../host/container-registry.bicep' =
-  if (!empty(containerRegistryName)) {
-    name: 'containerRegistry'
+// module containerRegistry '../host/container-registry.bicep' =
+//   if (!empty(containerRegistryName)) {
+//     name: 'containerRegistry'
+//     params: {
+//       location: location
+//       tags: tags
+//       name: containerRegistryName
+//     }
+//   }
+
+module cognitiveServices '../ai/cognitiveservices.bicep' = 
+  if (!empty(aiServiceName)) {
+    name: 'cognitiveServices'
     params: {
-      location: location
+      location: aiServiceLocation
       tags: tags
-      name: containerRegistryName
+      name: aiServiceName
+      kind: 'AIServices'
+      deployments: aiServiceModelDeployments
     }
   }
-
-module cognitiveServices '../ai/cognitiveservices.bicep' = { // todo check le if empty
-  name: 'cognitiveServices'
-  params: {
-    location: aiServiceLocation
-    tags: tags
-    name: aiServiceName
-    kind: 'AIServices'
-    deployments: aiServiceModelDeployments
-  }
-}
 
 // module searchService '../search/search-services.bicep' =
 //   if (!empty(searchServiceName)) {
@@ -217,9 +218,9 @@ output keyVaultEndpoint string = keyVault.outputs.endpoint
 output storageAccountId string = storageAccount.outputs.id
 output storageAccountName string = storageAccount.outputs.name
 
-output containerRegistryId string = !empty(containerRegistryName) ? containerRegistry.outputs.id : ''
-output containerRegistryName string = !empty(containerRegistryName) ? containerRegistry.outputs.name : ''
-output containerRegistryEndpoint string = !empty(containerRegistryName) ? containerRegistry.outputs.loginServer : ''
+// output containerRegistryId string = !empty(containerRegistryName) ? containerRegistry.outputs.id : ''
+// output containerRegistryName string = !empty(containerRegistryName) ? containerRegistry.outputs.name : ''
+// output containerRegistryEndpoint string = !empty(containerRegistryName) ? containerRegistry.outputs.loginServer : ''
 
 // output applicationInsightsId string = !empty(applicationInsightsName) ? applicationInsights.outputs.id : ''
 // output applicationInsightsName string = !empty(applicationInsightsName) ? applicationInsights.outputs.name : ''

@@ -40,6 +40,9 @@ param applicationInsightsId string
 @description('The Container Registry resource name.')
 param containerRegistryName string = ''
 
+@description('The Container Registry resource id.')
+param containerRegistryId string 
+
 @description('The Azure Search resource name.')
 param searchServiceName string
 
@@ -98,7 +101,7 @@ module hub './hub.bicep' = {
     displayName: hubName
     keyVaultId: hubDependencies.outputs.keyVaultId
     storageAccountId: hubDependencies.outputs.storageAccountId
-    containerRegistryId: hubDependencies.outputs.containerRegistryId
+    containerRegistryId: containerRegistryId //hubDependencies.outputs.containerRegistryId
     applicationInsightsId: applicationInsightsId //hubDependencies.outputs.applicationInsightsId
     aiServiceName: hubDependencies.outputs.aiServiceName
     aiServicesConnectionName: aiServicesConnectionName
@@ -143,8 +146,8 @@ output keyVaultEndpoint string = hubDependencies.outputs.keyVaultEndpoint
 // output logAnalyticsWorkspaceName string = hubDependencies.outputs.logAnalyticsWorkspaceName
 
 // Container Registry
-output containerRegistryName string = hubDependencies.outputs.containerRegistryName
-output containerRegistryEndpoint string = hubDependencies.outputs.containerRegistryEndpoint
+// output containerRegistryName string = hubDependencies.outputs.containerRegistryName
+// output containerRegistryEndpoint string = hubDependencies.outputs.containerRegistryEndpoint
 
 // Storage Account
 output storageAccountName string = hubDependencies.outputs.storageAccountName

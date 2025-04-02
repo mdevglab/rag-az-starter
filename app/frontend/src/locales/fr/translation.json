@@ -41,10 +41,10 @@
     "chatEmptyStateTitle": "Discutez avec vos données",
     "chatEmptyStateSubtitle": "Demandez n'importe quoi ou essayez un exemple",
     "defaultExamples": {
-        "1": "Que dois-je savoir pour choisir un conseiller financier ?",
-        "2": " Quels sont les principes comptables de base en matière de retraite ?",
-        "3": "Quels outils et politiques faut-il envisager en matière de répression financière ?",
-        "placeholder": "Saisissez une nouvelle question (par exemple, Qui est susceptible de choisir un courtier affilié à une banque ?)"
+        "1": "Dans quel ordre le formulaire CDC doit etre rempli ?",
+        "2": "Qu'elles sont les normes de sécurité chez FDP ?",
+        "3": "Qu'est-il important de savoir à propos de l'utilisation de ChatGPT ?",
+        "placeholder": "Saisissez une nouvelle question (par exemple, Quand aura lieu la prochaine formation sur le CELIAPP ?)"
     },
     "askTitle": "Demandez à vos données",
     "gpt4vExamples": {

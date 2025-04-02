@@ -140,9 +140,10 @@ resource hub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview' =
     }
 }
 
-resource aiService 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = {
-  name: aiServiceName
-}
+resource aiService 'Microsoft.CognitiveServices/accounts@2023-05-01' existing = 
+  if (!empty(aiServiceName)) {
+    name: aiServiceName
+  }
 
 
 

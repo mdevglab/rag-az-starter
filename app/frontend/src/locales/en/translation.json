@@ -37,10 +37,10 @@
     "chatEmptyStateTitle": "Chat with your data",
     "chatEmptyStateSubtitle": "Ask anything or try an example",
     "defaultExamples": {
-        "1": "What should I know about choosing a financial advisor?",
-        "2": "What are the basic pension accounting principle?",
-        "3": "What tools and policies should be considered in financial repression?",
-        "placeholder": "Type a new question (e.g.Who has likelihood of choosing a bank affiliated broker ?)"
+        "1": "In what order should the CDC form be filled out?",
+        "2": "What are the safety standards at FDP ?",
+        "3": "What is important to know about using ChatGPT?",
+        "placeholder": "Enter a new question (e.g., When will the next training on CELIAPP take place?)"
     },
     "askTitle": "Ask your data",
     "gpt4vExamples": {
