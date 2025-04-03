@@ -1,3 +1,5 @@
+from typing import Optional, Dict, Any
+
 class Page:
     """
     A single page from a document
@@ -6,12 +8,14 @@ class Page:
         page_num (int): Page number (0-indexed)
         offset (int): If the text of the entire Document was concatenated into a single string, the index of the first character on the page. For example, if page 1 had the text "hello" and page 2 had the text "world", the offset of page 2 is 5 ("hellow")
         text (str): The text of the page
+        metadata (Dict[str, Any]): Optional dictionary to hold metadata associated with the page.
     """
 
-    def __init__(self, page_num: int, offset: int, text: str):
+    def __init__(self, page_num: int, offset: int, text: str, metadata: Optional[Dict[str, Any]] = None):
         self.page_num = page_num
         self.offset = offset
         self.text = text
+        self.metadata = metadata if metadata is not None else {}
 
 
 class SplitPage:

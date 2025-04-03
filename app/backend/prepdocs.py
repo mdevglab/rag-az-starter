@@ -2,7 +2,7 @@ import argparse
 import asyncio
 import logging
 import os
-from typing import Optional, Union
+from typing import Optional, Union, Dict 
 
 from azure.core.credentials import AzureKeyCredential
 from azure.core.credentials_async import AsyncTokenCredential
@@ -16,6 +16,7 @@ from prepdocslib.embeddings import (
     AzureOpenAIEmbeddingService,
     ImageEmbeddings,
     OpenAIEmbeddingService,
+    OpenAIEmbeddings, # Ensure OpenAIEmbeddings base/type is imported if needed for type hints
 )
 from prepdocslib.fileprocessor import FileProcessor
 from prepdocslib.filestrategy import FileStrategy
@@ -23,7 +24,9 @@ from prepdocslib.htmlparser import LocalHTMLParser
 from prepdocslib.integratedvectorizerstrategy import (
     IntegratedVectorizerStrategy,
 )
-from prepdocslib.jsonparser import JsonParser
+#from prepdocslib.jsonparser import JsonParser
+from prepdocslib.customjsonparser import SpecificJsonParser
+
 from prepdocslib.listfilestrategy import (
     ADLSGen2ListFileStrategy,
     ListFileStrategy,
@@ -153,20 +156,27 @@ def setup_embeddings_service(
 
 
 def setup_file_processors(
-    azure_credential: AsyncTokenCredential,
+    azure_credential: AsyncTokenCredential, # Keep existing args
     document_intelligence_service: Union[str, None],
     document_intelligence_key: Union[str, None] = None,
     local_pdf_parser: bool = False,
     local_html_parser: bool = False,
-    search_images: bool = False,
-    use_content_understanding: bool = False,
+    search_images: bool = False, # Keep search_images if needed by DI parser
+    use_content_understanding: bool = False, # Keep CU params if needed by DI parser
     content_understanding_endpoint: Union[str, None] = None,
-):
-    sentence_text_splitter = SentenceTextSplitter()
+    # --- ADD parameter for the metadata field name ---
+    json_metadata_field: str = "sourcefile"
+) -> Dict[str, FileProcessor]:
+    """Configures and returns a dictionary of file processors."""
 
+    # Choose appropriate splitters
+    sentence_text_splitter = SentenceTextSplitter()
+    simple_text_splitter = SimpleTextSplitter() # Good for CSV, maybe simple JSON content if needed
+
+    # Setup Document Intelligence parser (if configured)
     doc_int_parser: Optional[DocumentAnalysisParser] = None
-    # check if Azure Document Intelligence credentials are provided
-    if document_intelligence_service is not None:
+    if document_intelligence_service:
+        # ... (doc intel setup logic as before) ...
         documentintelligence_creds: Union[AsyncTokenCredential, AzureKeyCredential] = (
             azure_credential if document_intelligence_key is None else AzureKeyCredential(document_intelligence_key)
         )
@@ -177,50 +187,66 @@ def setup_file_processors(
             content_understanding_endpoint=content_understanding_endpoint,
         )
 
+
+    # Setup PDF parser (prefer DI if available, fallback to local)
     pdf_parser: Optional[Parser] = None
-    if local_pdf_parser or document_intelligence_service is None:
-        pdf_parser = LocalPdfParser()
-    elif document_intelligence_service is not None:
+    if doc_int_parser:
         pdf_parser = doc_int_parser
-    else:
-        logger.warning("No PDF parser available")
+    elif local_pdf_parser:
+        pdf_parser = LocalPdfParser()
+    else: # Neither DI nor local explicitly enabled
+        logger.warning("No PDF parser configured (Document Intelligence not specified, USE_LOCAL_PDF_PARSER not true). PDFs will be skipped.")
 
+
+    # Setup HTML parser (prefer DI if available, fallback to local)
     html_parser: Optional[Parser] = None
-    if local_html_parser or document_intelligence_service is None:
+    if doc_int_parser:
+         html_parser = doc_int_parser
+    elif local_html_parser:
         html_parser = LocalHTMLParser()
-    elif document_intelligence_service is not None:
-        html_parser = doc_int_parser
     else:
-        logger.warning("No HTML parser available")
+         logger.warning("No HTML parser configured (Document Intelligence not specified, USE_LOCAL_HTML_PARSER not true). HTML files will be skipped.")
 
-    # These file formats can always be parsed:
-    file_processors = {
-        ".json": FileProcessor(JsonParser(), SimpleTextSplitter()),
-        ".md": FileProcessor(TextParser(), sentence_text_splitter),
-        ".txt": FileProcessor(TextParser(), sentence_text_splitter),
-        ".csv": FileProcessor(CsvParser(), sentence_text_splitter),
-    }
-    # These require either a Python package or Document Intelligence
-    if pdf_parser is not None:
-        file_processors.update({".pdf": FileProcessor(pdf_parser, sentence_text_splitter)})
-    if html_parser is not None:
-        file_processors.update({".html": FileProcessor(html_parser, sentence_text_splitter)})
-    # These file formats require Document Intelligence
-    if doc_int_parser is not None:
-        file_processors.update(
-            {
-                ".docx": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".pptx": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".xlsx": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".png": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".jpg": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".jpeg": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".tiff": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".bmp": FileProcessor(doc_int_parser, sentence_text_splitter),
-                ".heic": FileProcessor(doc_int_parser, sentence_text_splitter),
-            }
-        )
+
+    # Initialize the dictionary of file processors
+    file_processors: Dict[str, FileProcessor] = {}
+
+    # --- ADD Specific JSON Parser ---
+    # Use the custom parser for .json files, mapping 'url' to the specified metadata field.
+    # SentenceTextSplitter is generally better for natural language found in 'content'.
+    logger.info("Registering SpecificJsonParser for .json files, mapping 'url' to '%s'", json_metadata_field)
+    file_processors[".json"] = FileProcessor(
+        SpecificJsonParser(metadata_field_name=json_metadata_field),
+        sentence_text_splitter
+    )
+
+    # Add standard text-based formats
+    file_processors[".md"] = FileProcessor(TextParser(), sentence_text_splitter)
+    file_processors[".txt"] = FileProcessor(TextParser(), sentence_text_splitter)
+    # Use simple splitter for CSV as structure is tabular, not sentential
+    file_processors[".csv"] = FileProcessor(CsvParser(), simple_text_splitter)
+
+    # Add PDF processor if configured
+    if pdf_parser:
+        file_processors[".pdf"] = FileProcessor(pdf_parser, sentence_text_splitter)
+
+    # Add HTML processor if configured
+    if html_parser:
+        file_processors[".html"] = FileProcessor(html_parser, sentence_text_splitter)
+
+    # Add Document Intelligence handled types (if DI is configured)
+    if doc_int_parser:
+        di_formats = {
+            ".docx", ".pptx", ".xlsx", # Office formats
+            ".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".heic" # Image formats
+        }
+        for ext in di_formats:
+            # Use sentence splitter for text extracted from these formats
+            file_processors[ext] = FileProcessor(doc_int_parser, sentence_text_splitter)
+
+    logger.info("Registered file processors for extensions: %s", list(file_processors.keys()))
     return file_processors
+
 
 
 def setup_image_embeddings_service(
@@ -298,11 +324,35 @@ if __name__ == "__main__":
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     args = parser.parse_args()
 
+    # if args.verbose:
+    #     logging.basicConfig(format="%(message)s", datefmt="[%X]", handlers=[RichHandler(rich_tracebacks=True)])
+    #     # We only set the level to INFO for our logger,
+    #     # to avoid seeing the noisy INFO level logs from the Azure SDKs
+    #     logger.setLevel(logging.DEBUG)
+
+    # --- Logging Setup ---
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
     if args.verbose:
-        logging.basicConfig(format="%(message)s", datefmt="[%X]", handlers=[RichHandler(rich_tracebacks=True)])
-        # We only set the level to INFO for our logger,
-        # to avoid seeing the noisy INFO level logs from the Azure SDKs
-        logger.setLevel(logging.DEBUG)
+        logging.getLogger("scripts").setLevel(logging.DEBUG) # Set specific logger to DEBUG
+        logging.getLogger("prepdocslib").setLevel(logging.DEBUG) # Also enable DEBUG for the library
+        # Setup RichHandler if you have it installed and prefer it for verbose mode
+        # try:
+        #     from rich.logging import RichHandler
+        #     logging.basicConfig(level=logging.DEBUG, format="%(message)s", datefmt="[%X]", handlers=[RichHandler(rich_tracebacks=True)])
+        #     logging.getLogger("scripts").setLevel(logging.DEBUG)
+        #     logging.getLogger("prepdocslib").setLevel(logging.DEBUG)
+        #     logger.info("Verbose logging enabled using RichHandler.")
+        # except ImportError:
+        #     logger.info("Verbose logging enabled (standard handler). Install 'rich' for enhanced output.")
+        logger.info("Verbose logging enabled.")
+    else:
+        logging.getLogger("scripts").setLevel(logging.INFO)
+        logging.getLogger("prepdocslib").setLevel(logging.INFO)
+         # Reduce noise from Azure SDKs in non-verbose mode
+        logging.getLogger("azure.core.pipeline.policies").setLevel(logging.WARNING)
+        logging.getLogger("azure.identity").setLevel(logging.WARNING)
+        logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
+
 
     load_azd_env()
 
@@ -334,107 +384,125 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
 
-    search_info = loop.run_until_complete(
-        setup_search_info(
-            search_service=os.environ["AZURE_SEARCH_SERVICE"],
-            index_name=os.environ["AZURE_SEARCH_INDEX"],
-            azure_credential=azd_credential,
-            search_key=clean_key_if_exists(args.searchkey),
+    # --- Define Metadata Field Name for JSON ---
+    # Read from environment or default to "sourcefile"
+    json_url_metadata_field = os.getenv("AZURE_SEARCH_JSON_URL_FIELD", "sourcefile")
+    logger.info("JSON 'url' will be mapped to Azure Search field: '%s'", json_url_metadata_field)
+    try:
+        search_info = loop.run_until_complete(
+            setup_search_info(
+                search_service=os.environ["AZURE_SEARCH_SERVICE"],
+                index_name=os.environ["AZURE_SEARCH_INDEX"],
+                azure_credential=azd_credential,
+                search_key=clean_key_if_exists(args.searchkey),
+            )
         )
-    )
-    blob_manager = setup_blob_manager(
-        azure_credential=azd_credential,
-        storage_account=os.environ["AZURE_STORAGE_ACCOUNT"],
-        storage_container=os.environ["AZURE_STORAGE_CONTAINER"],
-        storage_resource_group=os.environ["AZURE_STORAGE_RESOURCE_GROUP"],
-        subscription_id=os.environ["AZURE_SUBSCRIPTION_ID"],
-        search_images=use_gptvision,
-        storage_key=clean_key_if_exists(args.storagekey),
-    )
-    list_file_strategy = setup_list_file_strategy(
-        azure_credential=azd_credential,
-        local_files=args.files,
-        datalake_storage_account=os.getenv("AZURE_ADLS_GEN2_STORAGE_ACCOUNT"),
-        datalake_filesystem=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM"),
-        datalake_path=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM_PATH"),
-        datalake_key=clean_key_if_exists(args.datalakekey),
-    )
-
-    openai_host = os.environ["OPENAI_HOST"]
-    openai_key = None
-    if os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE"):
-        openai_key = os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE")
-    elif not openai_host.startswith("azure") and os.getenv("OPENAI_API_KEY"):
-        openai_key = os.getenv("OPENAI_API_KEY")
-
-    openai_dimensions = 1536
-    if os.getenv("AZURE_AI_EMBED_DIMENSIONS"):
-        openai_dimensions = int(os.environ["AZURE_AI_EMBED_DIMENSIONS"])
-    openai_embeddings_service = setup_embeddings_service(
-        azure_credential=azd_credential,
-        openai_host=openai_host,
-        openai_model_name=os.environ["AZURE_AI_EMBED_MODEL_NAME"],
-        openai_service=os.getenv("AZURE_AI_SERVICE_NAME"),
-        openai_custom_url=os.getenv("AZURE_OPENAI_CUSTOM_URL"),
-        openai_deployment=os.getenv("AZURE_AI_EMBED_DEPLOYMENT_NAME"),
-        # https://learn.microsoft.com/azure/ai-services/openai/api-version-deprecation#latest-ga-api-release
-        openai_api_version=os.getenv("AZURE_AI_CHAT_MODEL_VERSION") or "2024-06-01",
-        openai_dimensions=openai_dimensions,
-        openai_key=clean_key_if_exists(openai_key),
-        openai_org=os.getenv("OPENAI_ORGANIZATION"),
-        disable_vectors=dont_use_vectors,
-        disable_batch_vectors=args.disablebatchvectors,
-    )
-
-    ingestion_strategy: Strategy
-    if use_int_vectorization:
-
-        if not openai_embeddings_service or not isinstance(openai_embeddings_service, AzureOpenAIEmbeddingService):
-            raise Exception("Integrated vectorization strategy requires an Azure OpenAI embeddings service")
-
-        ingestion_strategy = IntegratedVectorizerStrategy(
-            search_info=search_info,
-            list_file_strategy=list_file_strategy,
-            blob_manager=blob_manager,
-            document_action=document_action,
-            embeddings=openai_embeddings_service,
+        blob_manager = setup_blob_manager(
+            azure_credential=azd_credential,
+            storage_account=os.environ["AZURE_STORAGE_ACCOUNT"],
+            storage_container=os.environ["AZURE_STORAGE_CONTAINER"],
+            storage_resource_group=os.environ["AZURE_STORAGE_RESOURCE_GROUP"],
             subscription_id=os.environ["AZURE_SUBSCRIPTION_ID"],
-            search_service_user_assigned_id=args.searchserviceassignedid,
-            search_analyzer_name=os.getenv("AZURE_SEARCH_ANALYZER_NAME"),
-            use_acls=use_acls,
-            category=args.category,
-        )
-    else:
-        file_processors = setup_file_processors(
-            azure_credential=azd_credential,
-            document_intelligence_service=os.getenv("AZURE_DOCUMENTINTELLIGENCE_SERVICE"),
-            document_intelligence_key=clean_key_if_exists(args.documentintelligencekey),
-            local_pdf_parser=os.getenv("USE_LOCAL_PDF_PARSER") == "true",
-            local_html_parser=os.getenv("USE_LOCAL_HTML_PARSER") == "true",
             search_images=use_gptvision,
-            use_content_understanding=use_content_understanding,
-            content_understanding_endpoint=os.getenv("AZURE_CONTENTUNDERSTANDING_ENDPOINT"),
+            storage_key=clean_key_if_exists(args.storagekey),
         )
-        image_embeddings_service = setup_image_embeddings_service(
+        list_file_strategy = setup_list_file_strategy(
             azure_credential=azd_credential,
-            vision_endpoint=os.getenv("AZURE_VISION_ENDPOINT"),
-            search_images=use_gptvision,
+            local_files=args.files,
+            datalake_storage_account=os.getenv("AZURE_ADLS_GEN2_STORAGE_ACCOUNT"),
+            datalake_filesystem=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM"),
+            datalake_path=os.getenv("AZURE_ADLS_GEN2_FILESYSTEM_PATH"),
+            datalake_key=clean_key_if_exists(args.datalakekey),
         )
 
-        ingestion_strategy = FileStrategy(
-            search_info=search_info,
-            list_file_strategy=list_file_strategy,
-            blob_manager=blob_manager,
-            file_processors=file_processors,
-            document_action=document_action,
-            embeddings=openai_embeddings_service,
-            image_embeddings=image_embeddings_service,
-            search_analyzer_name=os.getenv("AZURE_SEARCH_ANALYZER_NAME"),
-            use_acls=use_acls,
-            category=args.category,
-            use_content_understanding=use_content_understanding,
-            content_understanding_endpoint=os.getenv("AZURE_CONTENTUNDERSTANDING_ENDPOINT"),
+        openai_host = os.environ["OPENAI_HOST"]
+        openai_key = None
+        if os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE"):
+            openai_key = os.getenv("AZURE_OPENAI_API_KEY_OVERRIDE")
+        elif not openai_host.startswith("azure") and os.getenv("OPENAI_API_KEY"):
+            openai_key = os.getenv("OPENAI_API_KEY")
+
+        openai_dimensions = 1536
+        if os.getenv("AZURE_AI_EMBED_DIMENSIONS"):
+            openai_dimensions = int(os.environ["AZURE_AI_EMBED_DIMENSIONS"])
+        openai_embeddings_service = setup_embeddings_service(
+            azure_credential=azd_credential,
+            openai_host=openai_host,
+            openai_model_name=os.environ["AZURE_AI_EMBED_MODEL_NAME"],
+            openai_service=os.getenv("AZURE_AI_SERVICE_NAME"),
+            openai_custom_url=os.getenv("AZURE_OPENAI_CUSTOM_URL"),
+            openai_deployment=os.getenv("AZURE_AI_EMBED_DEPLOYMENT_NAME"),
+            # https://learn.microsoft.com/azure/ai-services/openai/api-version-deprecation#latest-ga-api-release
+            openai_api_version=os.getenv("AZURE_AI_CHAT_MODEL_VERSION") or "2024-06-01",
+            openai_dimensions=openai_dimensions,
+            openai_key=clean_key_if_exists(openai_key),
+            openai_org=os.getenv("OPENAI_ORGANIZATION"),
+            disable_vectors=dont_use_vectors,
+            disable_batch_vectors=args.disablebatchvectors,
         )
 
-    loop.run_until_complete(main(ingestion_strategy, setup_index=not args.remove and not args.removeall))
-    loop.close()
+        ingestion_strategy: Strategy
+        if use_int_vectorization:
+
+            if not openai_embeddings_service or not isinstance(openai_embeddings_service, AzureOpenAIEmbeddingService):
+                raise Exception("Integrated vectorization strategy requires an Azure OpenAI embeddings service")
+
+            ingestion_strategy = IntegratedVectorizerStrategy(
+                search_info=search_info,
+                list_file_strategy=list_file_strategy,
+                blob_manager=blob_manager,
+                document_action=document_action,
+                embeddings=openai_embeddings_service,
+                subscription_id=os.environ["AZURE_SUBSCRIPTION_ID"],
+                search_service_user_assigned_id=args.searchserviceassignedid,
+                search_analyzer_name=os.getenv("AZURE_SEARCH_ANALYZER_NAME"),
+                use_acls=use_acls,
+                category=args.category,
+            )
+        else:
+            file_processors = setup_file_processors(
+                azure_credential=azd_credential,
+                document_intelligence_service=os.getenv("AZURE_DOCUMENTINTELLIGENCE_SERVICE"),
+                document_intelligence_key=clean_key_if_exists(args.documentintelligencekey),
+                local_pdf_parser=os.getenv("USE_LOCAL_PDF_PARSER") == "true",
+                local_html_parser=os.getenv("USE_LOCAL_HTML_PARSER") == "true",
+                search_images=use_gptvision,
+                use_content_understanding=use_content_understanding,
+                content_understanding_endpoint=os.getenv("AZURE_CONTENTUNDERSTANDING_ENDPOINT"),
+                # --- Pass the JSON metadata field name ---
+                json_metadata_field=json_url_metadata_field
+            )
+            image_embeddings_service = setup_image_embeddings_service(
+                azure_credential=azd_credential,
+                vision_endpoint=os.getenv("AZURE_VISION_ENDPOINT"),
+                search_images=use_gptvision,
+            )
+
+            ingestion_strategy = FileStrategy(
+                search_info=search_info,
+                list_file_strategy=list_file_strategy,
+                blob_manager=blob_manager,
+                file_processors=file_processors,
+                document_action=document_action,
+                embeddings=openai_embeddings_service,
+                image_embeddings=image_embeddings_service,
+                search_analyzer_name=os.getenv("AZURE_SEARCH_ANALYZER_NAME"),
+                use_acls=use_acls,
+                category=args.category,
+                use_content_understanding=use_content_understanding,
+                content_understanding_endpoint=os.getenv("AZURE_CONTENTUNDERSTANDING_ENDPOINT"),
+            )
+        # Determine if index setup should be skipped
+        should_setup_index = not (args.remove or args.removeall)
+        logger.info(f"Index setup {'enabled' if should_setup_index else 'disabled'}.")
+        loop.run_until_complete(main(ingestion_strategy, setup_index=not args.remove and not args.removeall))
+        loop.close()
+
+    except Exception as e:
+         logger.exception(f"An error occurred during the script execution: {e}")
+         # Optionally exit with a non-zero code on error
+         # exit(1)
+    finally:
+        # Close the loop
+        loop.close()
+        logger.info("Script execution finished.")
