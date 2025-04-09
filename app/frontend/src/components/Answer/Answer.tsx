@@ -109,16 +109,16 @@ export const Answer = ({
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>{t("citationWithColon")}</span>
                         {parsedAnswer.citations.map((citationIdentifier, i) => {
-                            const citationUrl = parsedAnswer.citationUrls?.[index];
+                            const citationUrl = parsedAnswer.citationUrls?.[i];
                             const path = getCitationFilePath(citationIdentifier);
                             return (
-                                <React.Fragment key={index}>
+                                <React.Fragment key={i}>
                                     <a
                                         className={styles.citation}
                                         title={citationIdentifier} // Tooltip shows the full identifier (e.g., file.pdf#page=1)
                                         onClick={() => onCitationClicked(path)} // Click uses the processed path
                                     >
-                                        {`${index + 1}. ${citationIdentifier}`}
+                                        {`${i + 1}. ${citationIdentifier}`}
                                     </a>
 
                                     {citationUrl && <a className={styles.citation}> {citationUrl}</a>}
