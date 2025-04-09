@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from "react";
-//import { Stack, IconButton } from "@fluentui/react";
 import { Stack } from "@fluentui/react/lib/Stack";
 import { IconButton } from "@fluentui/react/lib/Button";
 import { useTranslation } from "react-i18next";
@@ -53,7 +52,6 @@ export const Answer = ({
     const handleCopy = () => {
         // Single replace to remove all HTML tags to remove the citations
         const textToCopy = sanitizedAnswerHtml.replace(/<a [^>]*><sup>\d+<\/sup><\/a>|<[^>]+>/g, "");
-        console.log(parsedAnswer, "parsed ans");
         navigator.clipboard
             .writeText(textToCopy)
             .then(() => {

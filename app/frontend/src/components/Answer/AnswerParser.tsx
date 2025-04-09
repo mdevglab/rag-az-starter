@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { ChatAppResponse, getCitationFilePath } from "../../api";
+import { ChatAppResponse } from "../../api";
 
 type HtmlParsedAnswer = {
     answerHtml: string;
@@ -98,8 +98,6 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean,
 
             // Get the corresponding URL using the index
             const citationUrl = sourceUrls[dataPointIndex];
-            // We don't strictly need the URL here for rendering the main text,
-            // but we DO need to know if this citation is valid and track it.
 
             // Manage the list of found citations (unique identifiers and their URLs)
             let citationDisplayIndex: number;
@@ -113,17 +111,13 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean,
                     foundCitationsInText.push({ identifier: potentialCitationIdentifier, url: citationUrl });
                 } else {
                     console.warn(`URL missing for citation identifier: ${potentialCitationIdentifier} at index ${dataPointIndex}`);
-                    // Decide how to handle missing URL - maybe still add identifier? Or skip?
-                    // For now, let's add the identifier but maybe log the missing URL
-                    foundCitationsInText.push({ identifier: potentialCitationIdentifier, url: "" }); // Add with empty URL if missing
+
+                    foundCitationsInText.push({ identifier: potentialCitationIdentifier, url: "" });
                 }
                 citationDisplayIndex = foundCitationsInText.length;
             }
-
-            // Render the citation number as a superscript in the main text
-            // We are NOT putting the URL here anymore
             return renderToStaticMarkup(
-                <sup className="citationNumber" title={potentialCitationIdentifier}>
+                <sup className="supContainer" title={potentialCitationIdentifier}>
                     {citationDisplayIndex}
                 </sup>
             );
