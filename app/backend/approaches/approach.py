@@ -304,8 +304,7 @@ class Approach(ABC):
             # Base path includes the slash
             base_path = url_string[:last_slash_index + 1]
 
-        # 4. Encode the segment using urllib.parse.quote
-        #    safe='' ensures it encodes '/', '?', '&', '=', '+', etc., just like encodeURIComponent
+        # safe='' ensures it encodes '/', '?', '&', '=', '+', etc., just like encodeURIComponent
         encoded_segment = urllib.parse.quote(segment_to_encode, safe='')
 
         # 5. Reconstruct the URL using an f-string for clarity
