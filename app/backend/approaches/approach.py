@@ -11,7 +11,8 @@ from typing import (
     TypedDict,
     cast,
 )
-from urllib.parse import urljoin
+
+import urllib.parse
 
 import aiohttp
 from azure.search.documents.aio import SearchClient
@@ -227,11 +228,15 @@ class Approach(ABC):
     def get_sources_addons(
         self, results: List[Document]
     ) -> list[str]:
-
-        return [
-            doc.sourcefile
-            for doc in results
-        ]
+        processed_sources = []
+        for doc in results:
+            if doc and doc.sourcefile:
+                encoded_source = self.encode_last_url_segment(doc.sourcefile)
+                processed_sources.append(encoded_source)
+            else:
+                # missing sourcefile
+                processed_sources.append("")
+        return processed_sources
 
     def get_citation(self, sourcepage: str, use_image_citation: bool) -> str:
         if use_image_citation:
@@ -244,6 +249,67 @@ class Approach(ABC):
                 return f"{path[:page_idx]}.pdf#page={page_number}"
 
             return sourcepage
+        
+    def encode_last_url_segment(self, url_string: str) -> str:
+        """
+        Encodes only the last segment of a URL path using percent-encoding.
+
+        Handles full URLs, relative paths, query strings, and fragments.
+        If no '/' is present, the entire string (before query/fragment) is encoded.
+        Mimics JavaScript's encodeURIComponent on the last path segment.
+
+        Args:
+            url_string: The URL string to process.
+
+        Returns:
+            The URL string with its last path segment URL-encoded.
+        """
+        if not url_string:
+            return ""
+
+        # boundaries: last slash, query start, fragment start
+        last_slash_index = url_string.rfind('/')
+        query_index = url_string.find('?')
+        fragment_index = url_string.find('#')
+
+        # Determine the end of the path segment to encode
+        path_end_index = len(url_string)
+        if query_index != -1:
+            path_end_index = query_index
+        if fragment_index != -1:
+            path_end_index = min(path_end_index, fragment_index)
+
+        # Isolate the parts using string slicing
+        base_path = ""          # The part before the segment to encode (includes last slash)
+        segment_to_encode = ""  # The actual segment text
+        # The part starting from the query or fragment, or empty string
+        remaining_part = url_string[path_end_index:]
+
+        if last_slash_index == -1:
+            # No slash found, the whole part before ? or # is the segment
+            segment_to_encode = url_string[:path_end_index]
+            base_path = ""
+        else:
+            # Slash found, determine the start of the segment
+            segment_start_index = last_slash_index + 1
+
+            # Ensure the segment index is strictly before the path end index
+            if segment_start_index < path_end_index:
+                segment_to_encode = url_string[segment_start_index:path_end_index]
+            else:
+                # Slash is at or after the start of query/fragment (e.g., "path/?query")
+                # or string ends with "/" - nothing to encode after the slash
+                segment_to_encode = "" # Handled below by encoding an empty string
+
+            # Base path includes the slash
+            base_path = url_string[:last_slash_index + 1]
+
+        # 4. Encode the segment using urllib.parse.quote
+        #    safe='' ensures it encodes '/', '?', '&', '=', '+', etc., just like encodeURIComponent
+        encoded_segment = urllib.parse.quote(segment_to_encode, safe='')
+
+        # 5. Reconstruct the URL using an f-string for clarity
+        return f"{base_path}{encoded_segment}{remaining_part}"
 
     async def compute_text_embedding(self, q: str):
         SUPPORTED_DIMENSIONS_MODEL = {
@@ -268,7 +334,7 @@ class Approach(ABC):
         return VectorizedQuery(vector=query_vector, k_nearest_neighbors=50, fields="embedding")
 
     async def compute_image_embedding(self, q: str):
-        endpoint = urljoin(self.vision_endpoint, "computervision/retrieval:vectorizeText")
+        endpoint = urllib.parse.urljoin(self.vision_endpoint, "computervision/retrieval:vectorizeText")
         headers = {"Content-Type": "application/json"}
         params = {"api-version": "2023-02-01-preview", "modelVersion": "latest"}
         data = {"text": q}
