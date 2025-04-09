@@ -50,8 +50,13 @@ export type Thoughts = {
     props?: { [key: string]: string };
 };
 
+export type SourceUrls = {
+    sourceurl: string[];
+};
+
 export type ResponseContext = {
     data_points: string[];
+    data_addon?: SourceUrls | null;
     followup_questions: string[] | null;
     thoughts: Thoughts[];
 };

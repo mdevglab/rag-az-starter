@@ -1,9 +1,10 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { ChatAppResponse, getCitationFilePath } from "../../api";
+import { ChatAppResponse } from "../../api";
 
 type HtmlParsedAnswer = {
     answerHtml: string;
     citations: string[];
+    citationUrls: string[];
 };
 
 // Function to validate citation format and check if dataPoint starts with possible citation
@@ -30,9 +31,30 @@ function isCitationValid(contextDataPoints: any, citationCandidate: string): boo
     return isValidCitation;
 }
 
+function findCitationIndexInDataPoints(contextDataPoints: any, citationCandidate: string): number {
+    let dataPointsArray: string[];
+    // Determine the correct array of source documents based on common structures
+    if (Array.isArray(contextDataPoints)) {
+        dataPointsArray = contextDataPoints;
+    } else if (contextDataPoints && Array.isArray(contextDataPoints.text)) {
+        dataPointsArray = contextDataPoints.text;
+    } else if (contextDataPoints && Array.isArray(contextDataPoints.sources)) {
+        dataPointsArray = contextDataPoints.sources;
+    } else {
+        console.error("Could not determine data points array structure:", contextDataPoints);
+        return -1; // Cannot determine data points array
+    }
+
+    // Find the index where the data point starts with the citation text
+    return dataPointsArray.findIndex(dataPoint => typeof dataPoint === "string" && dataPoint.startsWith(citationCandidate));
+}
+
 export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean, onCitationClicked: (citationFilePath: string) => void): HtmlParsedAnswer {
+    const sourceUrls: string[] = answer.context.data_addon?.sourceurl || [];
     const contextDataPoints = answer.context.data_points;
-    const citations: string[] = [];
+
+    // This array will store pairs of { identifier, url } for unique citations found IN THE ANSWER TEXT
+    const foundCitationsInText: { identifier: string; url: string }[] = [];
 
     // Trim any whitespace from the end of the answer after removing follow-up questions
     let parsedAnswer = answer.message.content.trim();
@@ -54,35 +76,57 @@ export function parseAnswerToHtml(answer: ChatAppResponse, isStreaming: boolean,
 
     const parts = parsedAnswer.split(/\[([^\]]+)\]/g);
 
+    // Reconstruct the answer HTML, identify citations, and collect their URLs
     const fragments: string[] = parts.map((part, index) => {
         if (index % 2 === 0) {
+            // Regular text part
             return part;
         } else {
-            let citationIndex: number;
+            // Potential citation identifier (e.g., "file1.pdf#page=1")
+            const potentialCitationIdentifier = part;
 
-            if (!isCitationValid(contextDataPoints, part)) {
-                return `[${part}]`;
+            // Find the index in the original data points list
+            const dataPointIndex = findCitationIndexInDataPoints(contextDataPoints, potentialCitationIdentifier);
+
+            // Basic validation
+            const looksLikeCitation = /.+\.\w{1,}(?:#\S*)?$/.test(potentialCitationIdentifier);
+
+            if (dataPointIndex === -1 || !looksLikeCitation) {
+                // Not a valid citation found in context or doesn't look right, return as text
+                return `[${potentialCitationIdentifier}]`;
             }
 
-            if (citations.indexOf(part) !== -1) {
-                citationIndex = citations.indexOf(part) + 1;
+            // Get the corresponding URL using the index
+            const citationUrl = sourceUrls[dataPointIndex];
+
+            // Manage the list of found citations (unique identifiers and their URLs)
+            let citationDisplayIndex: number;
+            const existingCitation = foundCitationsInText.find(c => c.identifier === potentialCitationIdentifier);
+
+            if (existingCitation) {
+                citationDisplayIndex = foundCitationsInText.indexOf(existingCitation) + 1;
             } else {
-                citations.push(part);
-                citationIndex = citations.length;
+                // Only add if URL exists for safety, though ideally backend ensures consistency
+                if (citationUrl !== undefined) {
+                    foundCitationsInText.push({ identifier: potentialCitationIdentifier, url: citationUrl });
+                } else {
+                    console.warn(`URL missing for citation identifier: ${potentialCitationIdentifier} at index ${dataPointIndex}`);
+
+                    foundCitationsInText.push({ identifier: potentialCitationIdentifier, url: "" });
+                }
+                citationDisplayIndex = foundCitationsInText.length;
             }
-
-            const path = getCitationFilePath(part);
-
             return renderToStaticMarkup(
-                <a className="supContainer" title={part} onClick={() => onCitationClicked(path)}>
-                    <sup>{citationIndex}</sup>
-                </a>
+                <sup className="supContainer" title={potentialCitationIdentifier}>
+                    {citationDisplayIndex}
+                </sup>
             );
         }
     });
 
     return {
-        answerHtml: fragments.join(""),
-        citations
+        answerHtml: fragments.join(""), // The answer text with <sup> tags
+        citations: foundCitationsInText.map(c => c.identifier), // List of unique identifiers found in the text
+        citationUrls: foundCitationsInText.map(c => c.url) // Corresponding URLs in the same order
     };
 }

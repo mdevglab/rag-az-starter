@@ -305,3 +305,34 @@ class FileStrategy(Strategy):
 
 # Note: UploadUserFileStrategy might need similar modifications if used,
 # specifically around calling parse_file and ensuring Section IDs are generated.
+
+class UploadUserFileStrategy:
+    """
+    Strategy for ingesting a file that has already been uploaded to a ADLS2 storage account
+    """
+
+    def __init__(
+        self,
+        search_info: SearchInfo,
+        file_processors: dict[str, FileProcessor],
+        embeddings: Optional[OpenAIEmbeddings] = None,
+        image_embeddings: Optional[ImageEmbeddings] = None,
+    ):
+        self.file_processors = file_processors
+        self.embeddings = embeddings
+        self.image_embeddings = image_embeddings
+        self.search_info = search_info
+        self.search_manager = SearchManager(self.search_info, None, True, False, self.embeddings)
+
+    async def add_file(self, file: File):
+        if self.image_embeddings:
+            logging.warning("Image embeddings are not currently supported for the user upload feature")
+        sections = await parse_file(file, self.file_processors)
+        if sections:
+            await self.search_manager.update_content(sections, url=file.url)
+
+    async def remove_file(self, filename: str, oid: str):
+        if filename is None or filename == "":
+            logging.warning("Filename is required to remove a file")
+            return
+        await self.search_manager.remove_content(filename, oid)

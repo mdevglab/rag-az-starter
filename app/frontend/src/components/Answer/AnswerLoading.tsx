@@ -1,4 +1,4 @@
-import { Stack } from "@fluentui/react";
+import { Stack } from "@fluentui/react/lib/Stack";
 import { animated, useSpring } from "@react-spring/web";
 import { useTranslation } from "react-i18next";
 
