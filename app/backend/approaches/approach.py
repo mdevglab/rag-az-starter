@@ -223,6 +223,15 @@ class Approach(ABC):
                 (self.get_citation((doc.sourcepage or ""), use_image_citation)) + ": " + nonewlines(doc.content or "")
                 for doc in results
             ]
+        
+    def get_sources_addons(
+        self, results: List[Document]
+    ) -> list[str]:
+
+        return [
+            doc.sourcefile
+            for doc in results
+        ]
 
     def get_citation(self, sourcepage: str, use_image_citation: bool) -> str:
         if use_image_citation:

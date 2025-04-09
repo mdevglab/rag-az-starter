@@ -1,5 +1,7 @@
-import { useMemo, useState } from "react";
-import { Stack, IconButton } from "@fluentui/react";
+import React, { useMemo, useState } from "react";
+//import { Stack, IconButton } from "@fluentui/react";
+import { Stack } from "@fluentui/react/lib/Stack";
+import { IconButton } from "@fluentui/react/lib/Button";
 import { useTranslation } from "react-i18next";
 import DOMPurify from "dompurify";
 import ReactMarkdown from "react-markdown";
@@ -51,7 +53,7 @@ export const Answer = ({
     const handleCopy = () => {
         // Single replace to remove all HTML tags to remove the citations
         const textToCopy = sanitizedAnswerHtml.replace(/<a [^>]*><sup>\d+<\/sup><\/a>|<[^>]+>/g, "");
-
+        console.log(parsedAnswer, "parsed ans");
         navigator.clipboard
             .writeText(textToCopy)
             .then(() => {
@@ -108,12 +110,21 @@ export const Answer = ({
                 <Stack.Item>
                     <Stack horizontal wrap tokens={{ childrenGap: 5 }}>
                         <span className={styles.citationLearnMore}>{t("citationWithColon")}</span>
-                        {parsedAnswer.citations.map((x, i) => {
-                            const path = getCitationFilePath(x);
+                        {parsedAnswer.citations.map((citationIdentifier, i) => {
+                            const citationUrl = parsedAnswer.citationUrls?.[index];
+                            const path = getCitationFilePath(citationIdentifier);
                             return (
-                                <a key={i} className={styles.citation} title={x} onClick={() => onCitationClicked(path)}>
-                                    {`${++i}. ${x}`}
-                                </a>
+                                <React.Fragment key={index}>
+                                    <a
+                                        className={styles.citation}
+                                        title={citationIdentifier} // Tooltip shows the full identifier (e.g., file.pdf#page=1)
+                                        onClick={() => onCitationClicked(path)} // Click uses the processed path
+                                    >
+                                        {`${index + 1}. ${citationIdentifier}`}
+                                    </a>
+
+                                    {citationUrl && <a className={styles.citation}> {citationUrl}</a>}
+                                </React.Fragment>
                             );
                         })}
                     </Stack>

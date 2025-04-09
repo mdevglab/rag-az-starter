@@ -151,6 +151,9 @@ class ChatReadRetrieveReadApproach(ChatApproach):
 
         # STEP 3: Generate a contextual and content specific answer using the search results and chat history
         text_sources = self.get_sources_content(results, use_semantic_captions, use_image_citation=False)
+
+        text_sources_addons = self.get_sources_addons(results)
+
         rendered_answer_prompt = self.prompt_manager.render_prompt(
             self.answer_prompt,
             self.get_system_prompt_variables(overrides.get("prompt_template"))
@@ -173,6 +176,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         )
 
         extra_info = {
+            "data_addon": {"sourceurl": text_sources_addons},
             "data_points": {"text": text_sources},
             "thoughts": [
                 ThoughtStep(
