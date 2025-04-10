@@ -58,7 +58,7 @@ const Chat = () => {
     const [useGroupsSecurityFilter, setUseGroupsSecurityFilter] = useState<boolean>(false);
     const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
     const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
-
+    const [sortBy, setSortBy] = useState<string>("relevance");
     const lastQuestionRef = useRef<string>("");
     const chatMessageStreamEnd = useRef<HTMLDivElement | null>(null);
 
@@ -98,6 +98,9 @@ const Chat = () => {
     const getConfig = async () => {
         configApi().then(config => {
             setShowGPT4VOptions(config.showGPT4VOptions);
+            if (showSemanticRankerOption === undefined) {
+                setUseSemanticRanker(config.showSemanticRankerOption);
+            }
             setUseSemanticRanker(config.showSemanticRankerOption);
             setShowSemanticRankerOption(config.showSemanticRankerOption);
             setShowVectorOption(config.showVectorOption);
@@ -195,7 +198,8 @@ const Chat = () => {
                         minimum_reranker_score: minimumRerankerScore,
                         minimum_search_score: minimumSearchScore,
                         retrieval_mode: retrievalMode,
-                        semantic_ranker: useSemanticRanker,
+                        semantic_ranker: sortBy !== "relevance" ? useSemanticRanker : false,
+                        sort_by: sortBy,
                         semantic_captions: useSemanticCaptions,
                         suggest_followup_questions: useSuggestFollowupQuestions,
                         use_oid_security_filter: useOidSecurityFilter,
@@ -283,7 +287,11 @@ const Chat = () => {
                 setRetrieveCount(value);
                 break;
             case "useSemanticRanker":
-                setUseSemanticRanker(value);
+                if (sortBy === "relevance") {
+                    setUseSemanticRanker(value);
+                } else {
+                    setUseSemanticRanker(false);
+                }
                 break;
             case "useSemanticCaptions":
                 setUseSemanticCaptions(value);
@@ -293,6 +301,26 @@ const Chat = () => {
                 break;
             case "includeCategory":
                 setIncludeCategory(value);
+                break;
+            case "sortBy":
+                const newSortBy = value as string;
+                setSortBy(newSortBy);
+
+                if (newSortBy === "updatedate asc") {
+                    // Force semantic off AND set retrieve count to 10 when "Oldest First" is selected
+                    setUseSemanticRanker(false);
+                    setRetrieveCount(10); // Force retrieve count
+                    console.log("Sort set to Oldest First. Forcing retrieveCount to 10 and disabling Semantic Ranker.");
+                } else if (newSortBy === "updatedate desc") {
+                    // Force semantic off when "Newest First" is selected
+                    setUseSemanticRanker(false);
+                    // We DON'T force retrieveCount here unless specifically requested
+                    console.log("Sort set to Newest First. Disabling Semantic Ranker.");
+                } else {
+                    // Relevance selected
+                    // Nothing to force here - user can re-enable semantic ranker via its checkbox
+                    console.log("Sort set to Relevance.");
+                }
                 break;
             case "useOidSecurityFilter":
                 setUseOidSecurityFilter(value);
@@ -502,6 +530,7 @@ const Chat = () => {
                         useSemanticCaptions={useSemanticCaptions}
                         excludeCategory={excludeCategory}
                         includeCategory={includeCategory}
+                        sortBy={sortBy}
                         retrievalMode={retrievalMode}
                         useGPT4V={useGPT4V}
                         gpt4vInput={gpt4vInput}

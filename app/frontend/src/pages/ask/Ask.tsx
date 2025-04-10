@@ -35,6 +35,7 @@ export function Component(): JSX.Element {
     const [useGPT4V, setUseGPT4V] = useState<boolean>(false);
     const [gpt4vInput, setGPT4VInput] = useState<GPT4VInput>(GPT4VInput.TextAndImages);
     const [includeCategory, setIncludeCategory] = useState<string>("");
+    const [sortBy, setSortBy] = useState<string>("relevance");
     const [excludeCategory, setExcludeCategory] = useState<string>("");
     const [question, setQuestion] = useState<string>("");
     const [vectorFieldList, setVectorFieldList] = useState<VectorFieldOptions[]>([VectorFieldOptions.Embedding, VectorFieldOptions.ImageEmbedding]);
@@ -76,6 +77,9 @@ export function Component(): JSX.Element {
     const getConfig = async () => {
         configApi().then(config => {
             setShowGPT4VOptions(config.showGPT4VOptions);
+            if (showSemanticRankerOption === undefined) {
+                setUseSemanticRanker(config.showSemanticRankerOption);
+            }
             setUseSemanticRanker(config.showSemanticRankerOption);
             setShowSemanticRankerOption(config.showSemanticRankerOption);
             setShowVectorOption(config.showVectorOption);
@@ -124,7 +128,8 @@ export function Component(): JSX.Element {
                         minimum_reranker_score: minimumRerankerScore,
                         minimum_search_score: minimumSearchScore,
                         retrieval_mode: retrievalMode,
-                        semantic_ranker: useSemanticRanker,
+                        semantic_ranker: sortBy !== "relevance" ? useSemanticRanker : false,
+                        sort_by: sortBy,
                         semantic_captions: useSemanticCaptions,
                         use_oid_security_filter: useOidSecurityFilter,
                         use_groups_security_filter: useGroupsSecurityFilter,
@@ -175,7 +180,11 @@ export function Component(): JSX.Element {
                 setRetrieveCount(value);
                 break;
             case "useSemanticRanker":
-                setUseSemanticRanker(value);
+                if (sortBy === "relevance") {
+                    setUseSemanticRanker(value);
+                } else {
+                    setUseSemanticRanker(false);
+                }
                 break;
             case "useSemanticCaptions":
                 setUseSemanticCaptions(value);
@@ -185,6 +194,12 @@ export function Component(): JSX.Element {
                 break;
             case "includeCategory":
                 setIncludeCategory(value);
+                break;
+            case "sortBy":
+                setSortBy(value);
+                if (value !== "relevance") {
+                    setUseSemanticRanker(false);
+                }
                 break;
             case "useOidSecurityFilter":
                 setUseOidSecurityFilter(value);
@@ -323,6 +338,7 @@ export function Component(): JSX.Element {
                     useSemanticCaptions={useSemanticCaptions}
                     excludeCategory={excludeCategory}
                     includeCategory={includeCategory}
+                    sortBy={sortBy}
                     retrievalMode={retrievalMode}
                     useGPT4V={useGPT4V}
                     gpt4vInput={gpt4vInput}

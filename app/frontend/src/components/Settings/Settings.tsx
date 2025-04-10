@@ -1,3 +1,4 @@
+import React from "react";
 import { useId } from "@fluentui/react-hooks";
 import { useTranslation } from "react-i18next";
 import { TextField, ITextFieldProps, Checkbox, ICheckboxProps, Dropdown, IDropdownProps, IDropdownOption } from "@fluentui/react";
@@ -21,6 +22,7 @@ export interface SettingsProps {
     useSemanticCaptions: boolean;
     excludeCategory: string;
     includeCategory: string;
+    sortBy: string;
     retrievalMode: RetrievalMode;
     useGPT4V: boolean;
     gpt4vInput: GPT4VInput;
@@ -53,6 +55,7 @@ export const Settings = ({
     useSemanticCaptions,
     excludeCategory,
     includeCategory,
+    sortBy,
     retrievalMode,
     useGPT4V,
     gpt4vInput,
@@ -104,10 +107,31 @@ export const Settings = ({
     const shouldStreamFieldId = useId("shouldStreamField");
     const suggestFollowupQuestionsId = useId("suggestFollowupQuestions");
     const suggestFollowupQuestionsFieldId = useId("suggestFollowupQuestionsField");
+    const sortById = useId("sortBy");
+    const sortByFieldId = useId("sortByField");
 
     const renderLabel = (props: RenderLabelType | undefined, labelId: string, fieldId: string, helpText: string) => (
         <HelpCallout labelId={labelId} fieldId={fieldId} helpText={helpText} label={props?.label} />
     );
+
+    const sortOptions: IDropdownOption[] = [
+        { key: "relevance", text: t("sortOptions.relevance", "Relevance") }, // TODO add translations for these
+        { key: "updatedate desc", text: t("sortOptions.dateDesc", "Date: Newest First") },
+        { key: "updatedate asc", text: t("sortOptions.dateAsc", "Date: Oldest First") }
+    ];
+
+    const onSortChange = (_ev?: React.FormEvent<HTMLDivElement>, option?: IDropdownOption): void => {
+        const selectedKey = option?.key?.toString() || "relevance";
+        onChange("sortBy", selectedKey);
+
+        // If a date sort is selected, force semantic ranker off
+        // Azure AI search does not allow sorting when use of semantic ranker.
+        if (selectedKey !== "relevance") {
+            onChange("useSemanticRanker", false);
+        }
+    };
+
+    const isDateSortSelected = sortBy !== "relevance";
 
     return (
         <div className={className}>
@@ -182,12 +206,32 @@ export const Settings = ({
                 className={styles.settingsSeparator}
                 label={t("labels.retrieveCount")}
                 type="number"
-                min={1}
-                max={50}
-                defaultValue={retrieveCount.toString()}
-                onChange={(_ev, val) => onChange("retrieveCount", parseInt(val || "3"))}
+                min={1} // Ensure min attribute is set
+                max={50} // Ensure max attribute is set
+                // Use 'value' prop instead of 'defaultValue'
+                value={retrieveCount.toString()}
+                // The onChange handler calls the parent to update the state
+                onChange={(_ev, val) => {
+                    // Provide a fallback default if input is cleared or invalid
+                    // Use 1 (the minimum) or 3 (your original default) as fallback
+                    const numericValue = parseInt(val || "1", 10);
+                    // Ensure value stays within bounds if needed, though browser might handle min/max
+                    const clampedValue = Math.max(1, Math.min(50, numericValue));
+                    onChange("retrieveCount", isNaN(clampedValue) ? 1 : clampedValue);
+                }}
                 aria-labelledby={retrieveCountId}
                 onRenderLabel={props => renderLabel(props, retrieveCountId, retrieveCountFieldId, t("helpTexts.retrieveNumber"))}
+            />
+
+            <Dropdown
+                id={sortByFieldId}
+                label={t("labels.sortBy", "Sort By")}
+                options={sortOptions}
+                selectedKey={sortBy}
+                onChange={onSortChange}
+                aria-labelledby={sortById}
+                // onRenderLabel={props => renderLabel(props, sortById, sortByFieldId, t("helpTexts.sortBy", "Determines the order of retrieved documents. Selecting a date sort will disable Semantic Ranker."))} // Optional help text
+                className={styles.settingsSeparator}
             />
 
             <Dropdown
@@ -221,7 +265,12 @@ export const Settings = ({
                         className={styles.settingsSeparator}
                         checked={useSemanticRanker}
                         label={t("labels.useSemanticRanker")}
-                        onChange={(_ev, checked) => onChange("useSemanticRanker", !!checked)}
+                        disabled={isDateSortSelected}
+                        onChange={(_ev, checked) => {
+                            if (!isDateSortSelected) {
+                                onChange("useSemanticRanker", !!checked);
+                            }
+                        }}
                         aria-labelledby={semanticRankerId}
                         onRenderLabel={props => renderLabel(props, semanticRankerId, semanticRankerFieldId, t("helpTexts.useSemanticReranker"))}
                     />
@@ -231,8 +280,9 @@ export const Settings = ({
                         className={styles.settingsSeparator}
                         checked={useSemanticCaptions}
                         label={t("labels.useSemanticCaptions")}
+                        // Disable if semantic ranker is off OR if a date sort is selected
+                        disabled={!useSemanticRanker || isDateSortSelected}
                         onChange={(_ev, checked) => onChange("useSemanticCaptions", !!checked)}
-                        disabled={!useSemanticRanker}
                         aria-labelledby={semanticCaptionsId}
                         onRenderLabel={props => renderLabel(props, semanticCaptionsId, semanticCaptionsFieldId, t("helpTexts.useSemanticCaptions"))}
                     />

@@ -155,23 +155,32 @@ class ChatReadRetrieveReadApproach(ChatApproach):
             logger.info("Semantic ranker enabled. Sorting will be by relevance (order_by=None).")
             order_by = None
         else:
-            sort_override = overrides.get("sort_by")
+            # Semantic Ranker is OFF: Evaluate sort_by override
+            sort_override = overrides.get("sort_by") # This could be "relevance", "updatedate desc", "updatedate asc", or None
             disable_default_date_sort = overrides.get("disable_default_date_sort", False)
 
-            if sort_override:
+            if sort_override and sort_override != "relevance":
+                # User explicitly specified a sort order OTHER THAN "relevance"
                 order_by = sort_override
                 logger.info(f"Semantic ranker disabled. Using specified sort order: {order_by}")
-                # Check if the user's sort override uses the date field
+                # Check if the user's sort override uses the date field for 'top' adjustment logic
                 if self.updatedate_field and order_by.startswith(self.updatedate_field):
                     is_date_sort_active = True
+            elif sort_override == "relevance":
+                # User explicitly requested relevance sort
+                logger.info("Sort explicitly set to 'relevance'. Using relevance sorting.")
+                order_by = None # Treat same as omitting the key
             elif disable_default_date_sort:
-                logger.info("Semantic ranker disabled. Default date sorting disabled. Using relevance sorting.")
+                # sort_override is None (key omitted), and user disabled default date sort
+                logger.info("Semantic ranker disabled. Default date sorting disabled by override. Using relevance sorting.")
                 order_by = None
             elif self.updatedate_field:
+                # sort_override is None (key omitted), default date sort NOT disabled, and field exists
                 order_by = f"{self.updatedate_field} desc"
                 logger.info(f"Semantic ranker disabled. Using default date sort order: {order_by}")
                 is_date_sort_active = True # Default date sort is active
             else:
+                # sort_override is None (key omitted), default date sort NOT disabled, but field doesn't exist
                 logger.warning("Semantic ranker disabled, but no updatedate_field configured. Using relevance sorting.")
                 order_by = None
 
