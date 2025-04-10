@@ -206,11 +206,9 @@ export const Settings = ({
                 className={styles.settingsSeparator}
                 label={t("labels.retrieveCount")}
                 type="number"
-                min={1} // Ensure min attribute is set
-                max={50} // Ensure max attribute is set
-                // Use 'value' prop instead of 'defaultValue'
+                min={1}
+                max={50}
                 value={retrieveCount.toString()}
-                // The onChange handler calls the parent to update the state
                 onChange={(_ev, val) => {
                     // Provide a fallback default if input is cleared or invalid
                     // Use 1 (the minimum) or 3 (your original default) as fallback
