@@ -661,6 +661,7 @@ async def setup_clients():
         embedding_dimensions=AZURE_AI_EMBED_DIMENSIONS,
         sourcepage_field=KB_FIELDS_SOURCEPAGE,
         content_field=KB_FIELDS_CONTENT,
+        updatedate_field=KB_FIELDS_UPDATEDATE,
         query_language=AZURE_SEARCH_QUERY_LANGUAGE,
         query_speller=AZURE_SEARCH_QUERY_SPELLER,
         prompt_manager=prompt_manager,

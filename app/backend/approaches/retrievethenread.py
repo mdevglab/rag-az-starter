@@ -31,6 +31,7 @@ class RetrieveThenReadApproach(Approach):
         embedding_dimensions: int,
         sourcepage_field: str,
         content_field: str,
+        updatedate_field: str,
         query_language: str,
         query_speller: str,
         prompt_manager: PromptManager,
@@ -46,6 +47,7 @@ class RetrieveThenReadApproach(Approach):
         self.embedding_deployment = embedding_deployment
         self.sourcepage_field = sourcepage_field
         self.content_field = content_field
+        self.updatedate_field = updatedate_field
         self.query_language = query_language
         self.query_speller = query_speller
         self.chatgpt_token_limit = get_token_limit(chatgpt_model, self.ALLOW_NON_GPT_MODELS)
@@ -78,21 +80,38 @@ class RetrieveThenReadApproach(Approach):
         if use_vector_search:
             vectors.append(await self.compute_text_embedding(q))
 
+        # --- Check if sorting is needed (similar logic to ChatReadRetrieveReadApproach might be needed if complex sorting is desired) ---
+        # For now, keeping it simple - relying on semantic ranker or default relevance
+        order_by = None # Default: relevance sort or semantic ranker handles it
+        if use_semantic_ranker:
+             # Semantic ranker overrides any explicit order_by
+             order_by = None
+        # else:
+             # Add logic here if you want non-semantic date sorting for /ask
+             # sort_override = overrides.get("sort_by")
+             # if sort_override and sort_override != "relevance" and self.updatedate_field:
+             #      if sort_override.startswith(self.updatedate_field):
+             #           order_by = sort_override
+             # elif self.updatedate_field: # Default date sort if field exists? Decide if needed for /ask
+             #      order_by = f"{self.updatedate_field} desc"
+    
         results = await self.search(
-            top,
-            q,
-            filter,
-            vectors,
-            use_text_search,
-            use_vector_search,
-            use_semantic_ranker,
-            use_semantic_captions,
-            minimum_search_score,
-            minimum_reranker_score,
+            top=top,
+            query_text=q,
+            filter=filter,
+            vectors=vectors,
+            use_text_search=use_text_search,
+            use_vector_search=use_vector_search,
+            use_semantic_ranker=use_semantic_ranker,
+            use_semantic_captions=use_semantic_captions,
+            minimum_search_score=minimum_search_score,
+            minimum_reranker_score=minimum_reranker_score,
+            order_by=order_by,
         )
 
         # Process results
         text_sources = self.get_sources_content(results, use_semantic_captions, use_image_citation=False)
+        text_sources_addons = self.get_sources_addons(results)
         rendered_answer_prompt = self.prompt_manager.render_prompt(
             self.answer_prompt,
             self.get_system_prompt_variables(overrides.get("prompt_template"))
@@ -110,6 +129,7 @@ class RetrieveThenReadApproach(Approach):
         )
 
         extra_info = {
+            "data_addon": {"sourceurl": text_sources_addons},
             "data_points": {"text": text_sources},
             "thoughts": [
                 ThoughtStep(
@@ -119,6 +139,7 @@ class RetrieveThenReadApproach(Approach):
                         "use_semantic_captions": use_semantic_captions,
                         "use_semantic_ranker": use_semantic_ranker,
                         "top": top,
+                        "order_by": order_by,
                         "filter": filter,
                         "use_vector_search": use_vector_search,
                         "use_text_search": use_text_search,
