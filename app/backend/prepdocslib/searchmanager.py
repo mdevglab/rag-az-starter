@@ -213,11 +213,11 @@ class SearchManager:
                     # --- ADD NEW FIELD DEFINITION for updatedate ---
                     SimpleField(
                         name="updatedate", # The name must match the key used in the metadata dictionary
-                        type="Edm.String", # Assuming string storage from JSON
+                        type="Edm.DateTimeOffset",
                         retrievable=True,
                         filterable=True,
-                        sortable=True,  # Useful for sorting by date
-                        facetable=True   # Useful for faceting by date
+                        sortable=True,
+                        facetable=True
                     ),
                 ]
                 if self.use_acls:
@@ -319,7 +319,7 @@ class SearchManager:
                 if not field_exists:
                     logger.info("Adding 'updatedate' field to existing index %s", self.search_info.index_name)
                     existing_index.fields.append(
-                         SimpleField(name="updatedate", type="Edm.String", retrievable=True, filterable=True, sortable=True, facetable=True)
+                         SimpleField(name="updatedate", type="Edm.DateTimeOffset", retrievable=True, filterable=True, sortable=True, facetable=True)
                     )
 
                 if not any(field.name == "storageUrl" for field in existing_index.fields):

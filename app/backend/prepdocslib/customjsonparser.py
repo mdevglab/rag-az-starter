@@ -88,7 +88,7 @@ class SpecificJsonParser(Parser):
 
                 if not isinstance(item_data, dict):
                     logger.error("%s is not a dictionary (object). Skipping item.", item_log_prefix)
-                    continue # Skip this item, process next
+                    continue
 
                 logger.debug("Processing %s. Keys found: %s", item_log_prefix, list(item_data.keys()))
                 text_content = item_data.get("content")
@@ -97,7 +97,7 @@ class SpecificJsonParser(Parser):
 
                 if not isinstance(text_content, str) or not text_content.strip():
                     logger.error("'content' field is missing, empty, or not a string in %s. Skipping item.", item_log_prefix)
-                    continue # Skip this item
+                    continue
 
                 page_metadata: Dict[str, Any] = {}
 

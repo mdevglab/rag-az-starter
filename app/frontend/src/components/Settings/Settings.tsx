@@ -115,7 +115,7 @@ export const Settings = ({
     );
 
     const sortOptions: IDropdownOption[] = [
-        { key: "relevance", text: t("sortOptions.relevance", "Relevance") }, // TODO add translations for these
+        { key: "relevance", text: t("sortOptions.relevance", "Relevance") },
         { key: "updatedate desc", text: t("sortOptions.dateDesc", "Date: Newest First") },
         { key: "updatedate asc", text: t("sortOptions.dateAsc", "Date: Oldest First") }
     ];
@@ -207,15 +207,13 @@ export const Settings = ({
                 label={t("labels.retrieveCount")}
                 type="number"
                 min={1}
-                max={50}
+                max={100}
                 value={retrieveCount.toString()}
                 onChange={(_ev, val) => {
                     // Provide a fallback default if input is cleared or invalid
                     // Use 1 (the minimum) or 3 (your original default) as fallback
                     const numericValue = parseInt(val || "1", 10);
-                    // Ensure value stays within bounds if needed, though browser might handle min/max
-                    const clampedValue = Math.max(1, Math.min(50, numericValue));
-                    onChange("retrieveCount", isNaN(clampedValue) ? 1 : clampedValue);
+                    onChange("retrieveCount", isNaN(numericValue) ? 1 : numericValue);
                 }}
                 aria-labelledby={retrieveCountId}
                 onRenderLabel={props => renderLabel(props, retrieveCountId, retrieveCountFieldId, t("helpTexts.retrieveNumber"))}
@@ -223,12 +221,12 @@ export const Settings = ({
 
             <Dropdown
                 id={sortByFieldId}
-                label={t("labels.sortBy", "Sort By")}
+                label={t("labels.sortBy")}
                 options={sortOptions}
                 selectedKey={sortBy}
                 onChange={onSortChange}
                 aria-labelledby={sortById}
-                // onRenderLabel={props => renderLabel(props, sortById, sortByFieldId, t("helpTexts.sortBy", "Determines the order of retrieved documents. Selecting a date sort will disable Semantic Ranker."))} // Optional help text
+                onRenderLabel={props => renderLabel(props, sortById, sortByFieldId, t("helpTexts.sortBy"))} // Optional help text
                 className={styles.settingsSeparator}
             />
 
@@ -239,10 +237,7 @@ export const Settings = ({
                 selectedKey={includeCategory}
                 onChange={(_ev?: React.FormEvent<HTMLElement | HTMLInputElement>, option?: IDropdownOption) => onChange("includeCategory", option?.key || "")}
                 aria-labelledby={includeCategoryId}
-                options={[
-                    { key: "", text: t("labels.includeCategoryOptions.all") }
-                    // { key: "example", text: "Example Category" } // Add more categories as needed
-                ]}
+                options={[{ key: "", text: t("labels.includeCategoryOptions.all") }]}
                 onRenderLabel={props => renderLabel(props, includeCategoryId, includeCategoryFieldId, t("helpTexts.includeCategory"))}
             />
 

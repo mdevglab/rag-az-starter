@@ -196,8 +196,15 @@ export function Component(): JSX.Element {
                 setIncludeCategory(value);
                 break;
             case "sortBy":
-                setSortBy(value);
-                if (value !== "relevance") {
+                const newSortBy = value as string;
+                setSortBy(newSortBy);
+
+                if (newSortBy === "updatedate asc") {
+                    // Force semantic off AND set retrieve count to 10 when "Oldest First" is selected
+                    setUseSemanticRanker(false);
+                    setRetrieveCount(10); // Force retrieve count
+                } else if (newSortBy === "updatedate desc") {
+                    // Force semantic off
                     setUseSemanticRanker(false);
                 }
                 break;

@@ -310,16 +310,9 @@ const Chat = () => {
                     // Force semantic off AND set retrieve count to 10 when "Oldest First" is selected
                     setUseSemanticRanker(false);
                     setRetrieveCount(10); // Force retrieve count
-                    console.log("Sort set to Oldest First. Forcing retrieveCount to 10 and disabling Semantic Ranker.");
                 } else if (newSortBy === "updatedate desc") {
-                    // Force semantic off when "Newest First" is selected
+                    // Force semantic off
                     setUseSemanticRanker(false);
-                    // We DON'T force retrieveCount here unless specifically requested
-                    console.log("Sort set to Newest First. Disabling Semantic Ranker.");
-                } else {
-                    // Relevance selected
-                    // Nothing to force here - user can re-enable semantic ranker via its checkbox
-                    console.log("Sort set to Relevance.");
                 }
                 break;
             case "useOidSecurityFilter":

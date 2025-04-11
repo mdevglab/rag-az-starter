@@ -19,7 +19,7 @@ from core.authentication import AuthenticationHelper
 
 logger = logging.getLogger(__name__)
 DEFAULT_TOP_VALUE = 3
-DEFAULT_TOP_FOR_DATE_SORT = 10
+DEFAULT_TOP_FOR_DATE_SORT = 10 
 
 class ChatReadRetrieveReadApproach(ChatApproach):
     """
