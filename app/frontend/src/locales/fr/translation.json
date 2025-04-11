@@ -35,7 +35,11 @@
     "developerSettings": "Paramètres développeur",
 
 
-
+    "sortOptions": {
+        "relevance": "Pertinence",
+        "dateDesc": "Date: Récente en premier",
+        "dateAsc": "Date: Ancien en premier"
+    },
 
     
     "chatEmptyStateTitle": "Discutez avec vos données",
@@ -112,6 +116,7 @@
                 "texts": "Texte"
             }
         },
+        "sortBy": "Trier par",
         "vector": {
             "label": "Champs de vecteur (recherche de vecteur multi-requête)",
             "options": {
@@ -156,6 +161,7 @@
             "Définit le mode de récupération pour la requête Azure AI Search. Vecteurs + Texte (Hybride) utilise une combinaison de recherche vectorielle et de recherche en texte intégral, Vecteurs utilise uniquement la recherche vectorielle, et Texte utilise uniquement la recherche en texte intégral. Hybride est généralement optimal.",
         "streamChat": "Diffuse en continu la réponse à l'interface utilisateur du chat au fur et à mesure de sa génération.",
         "useOidSecurityFilter":"Filtrez les résultats de recherche en fonction de l'OID de l'utilisateur authentifié.",
+        "sortBy": "Définit l'ordre de résultats de recherche. Sélectionner le tri par date désactive le reranker sémantique.",
         "useGroupsSecurityFilter": "Filtrez les résultats de recherche en fonction des groupes de l'utilisateur authentifié."
     }
 }

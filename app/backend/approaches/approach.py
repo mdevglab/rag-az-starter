@@ -1,6 +1,7 @@
+import logging
 import os
 from abc import ABC
-from dataclasses import dataclass
+from dataclasses import dataclass, field 
 from typing import (
     Any,
     AsyncGenerator,
@@ -28,6 +29,7 @@ from openai.types.chat import ChatCompletionMessageParam
 from approaches.promptmanager import PromptManager
 from core.authentication import AuthenticationHelper
 
+logger = logging.getLogger(__name__)
 
 @dataclass
 class Document:
@@ -38,9 +40,10 @@ class Document:
     category: Optional[str]
     sourcepage: Optional[str]
     sourcefile: Optional[str]
-    oids: Optional[List[str]]
-    groups: Optional[List[str]]
-    captions: List[QueryCaptionResult]
+    updatedate: Optional[str] = None
+    oids: Optional[List[str]] = field(default_factory=list)
+    groups: Optional[List[str]] = field(default_factory=list)
+    captions: List[QueryCaptionResult] = field(default_factory=list)
     score: Optional[float] = None
     reranker_score: Optional[float] = None
 
@@ -53,6 +56,7 @@ class Document:
             "category": self.category,
             "sourcepage": self.sourcepage,
             "sourcefile": self.sourcefile,
+            "updatedate": self.updatedate,
             "oids": self.oids,
             "groups": self.groups,
             "captions": (
@@ -111,6 +115,7 @@ class Approach(ABC):
         vision_endpoint: str,
         vision_token_provider: Callable[[], Awaitable[str]],
         prompt_manager: PromptManager,
+        updatedate_field: Optional[str] = None,
     ):
         self.search_client = search_client
         self.openai_client = openai_client
@@ -124,6 +129,7 @@ class Approach(ABC):
         self.vision_endpoint = vision_endpoint
         self.vision_token_provider = vision_token_provider
         self.prompt_manager = prompt_manager
+        self.updatedate_field = updatedate_field
 
     def build_filter(self, overrides: dict[str, Any], auth_claims: dict[str, Any]) -> Optional[str]:
         include_category = overrides.get("include_category")
@@ -146,64 +152,103 @@ class Approach(ABC):
         vectors: List[VectorQuery],
         use_text_search: bool,
         use_vector_search: bool,
-        use_semantic_ranker: bool,
         use_semantic_captions: bool,
         minimum_search_score: Optional[float],
         minimum_reranker_score: Optional[float],
+        use_semantic_ranker: bool,
+        order_by: Optional[str] = None,
+        
     ) -> List[Document]:
         search_text = query_text if use_text_search else ""
         search_vectors = vectors if use_vector_search else []
-        if use_semantic_ranker:
-            results = await self.search_client.search(
-                search_text=search_text,
-                filter=filter,
-                top=top,
-                query_caption="extractive|highlight-false" if use_semantic_captions else None,
-                vector_queries=search_vectors,
-                query_type=QueryType.SEMANTIC,
-                query_language=self.query_language,
-                query_speller=self.query_speller,
-                semantic_configuration_name="default",
-                semantic_query=query_text,
-            )
-        else:
-            results = await self.search_client.search(
-                search_text=search_text,
-                filter=filter,
-                top=top,
-                vector_queries=search_vectors,
-            )
 
-        documents = []
-        async for page in results.by_page():
-            async for document in page:
-                documents.append(
-                    Document(
-                        id=document.get("id"),
-                        content=document.get("content"),
-                        embedding=document.get("embedding"),
-                        image_embedding=document.get("imageEmbedding"),
-                        category=document.get("category"),
-                        sourcepage=document.get("sourcepage"),
-                        sourcefile=document.get("sourcefile"),
-                        oids=document.get("oids"),
-                        groups=document.get("groups"),
-                        captions=cast(List[QueryCaptionResult], document.get("@search.captions")),
-                        score=document.get("@search.score"),
-                        reranker_score=document.get("@search.reranker_score"),
+        search_args = {
+            "search_text": search_text,
+            "vector_queries": search_vectors,
+            "filter": filter,
+            "top": top,
+            "query_language": self.query_language,
+            "query_speller": self.query_speller,
+            "order_by": order_by,
+        }
+
+        try:
+            if use_semantic_ranker:
+                # --- >>> SAFEGUARD: Remove order_by for semantic search <<< ---
+                final_order_by = search_args.pop("order_by", None) # Remove order_by key
+                if final_order_by is not None:
+                    logger.warning(f"order_by ('{final_order_by}') was provided but ignored because semantic search is enabled.")
+                # --- >>> END SAFEGUARD <<< ---
+
+                # Add semantic-specific args
+                search_args.update({
+                    "query_language": self.query_language,
+                    "query_speller": self.query_speller,
+                    "query_caption": "extractive|highlight-false" if use_semantic_captions else None,
+                    "query_type": QueryType.SEMANTIC,
+                    "semantic_configuration_name": "default",
+                    "semantic_query": query_text,
+                })
+                logger.debug(f"Executing semantic search with args: {search_args}")
+                results = await self.search_client.search(**search_args)
+            else:
+                # For non-semantic, order_by (if not None) remains in search_args
+                logger.debug(f"Executing non-semantic search with args: {search_args}")
+                results = await self.search_client.search(**search_args)
+
+            documents = []
+            async for page in results.by_page():
+                async for document in page:
+                    documents.append(
+                        Document(
+                            id=document.get("id"),
+                            content=document.get("content"),
+                            embedding=document.get("embedding"),
+                            image_embedding=document.get("imageEmbedding"),
+                            category=document.get("category"),
+                            sourcepage=document.get("sourcepage"),
+                            sourcefile=document.get("sourcefile"),
+                            updatedate=document.get(self.updatedate_field) if self.updatedate_field else None,
+                            oids=document.get("oids"),
+                            groups=document.get("groups"),
+                            captions=cast(List[QueryCaptionResult], document.get("@search.captions")),
+                            score=document.get("@search.score"),
+                            reranker_score=document.get("@search.reranker_score"),
+                        )
                     )
-                )
 
-            qualified_documents = [
-                doc
-                for doc in documents
-                if (
-                    (doc.score or 0) >= (minimum_search_score or 0)
-                    and (doc.reranker_score or 0) >= (minimum_reranker_score or 0)
-                )
-            ]
+                qualified_documents = []
+                for doc in documents: # documents contains the top N items returned by search
+                    passes = False
+                    if use_semantic_ranker:
+                        # If semantic, primarily check reranker score
+                        if (doc.reranker_score or -1.0) >= (minimum_reranker_score or -1.0):
+                            passes = True
+                            # Optional: ALSO require a minimum base score? Usually not needed with semantic.
+                            # if (doc.score or -1.0) < (minimum_search_score or -1.0):
+                            #     passes = False
+                    else:
+                        # If not semantic, check base score
+                        if (doc.score or -1.0) >= (minimum_search_score or -1.0):
+                            passes = True
 
-        return qualified_documents
+                    if passes:
+                        qualified_documents.append(doc)
+                    else:
+                        # Optional: Add detailed logging here to see why docs are filtered
+                        logger.debug(
+                            f"Document ID {getattr(doc, 'id', 'N/A')} filtered out. "
+                            f"Semantic: {use_semantic_ranker}, "
+                            f"Base Score: {doc.score} (Threshold: {minimum_search_score}), "
+                            f"Reranker Score: {doc.reranker_score} (Threshold: {minimum_reranker_score})."
+                        )
+
+                logger.debug(f"Search returned {len(documents)} initial documents, {len(qualified_documents)} qualified after score filtering.")
+
+            return qualified_documents
+        except Exception as e:
+            logger.error(f"Error during Azure Search query with args: {search_args}", exc_info=True)
+            return []
 
     def get_sources_content(
         self, results: List[Document], use_semantic_captions: bool, use_image_citation: bool

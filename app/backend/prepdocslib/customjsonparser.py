@@ -2,46 +2,61 @@ import json
 import logging
 from typing import IO, AsyncGenerator, Dict, Any, Optional
 import asyncio
+from datetime import datetime, timezone
 
-# Import the MODIFIED Page class
 from .page import Page
 from .parser import Parser
+
+try:
+    from dateutil import parser as dateutil_parser
+    from dateutil.parser import ParserError
+except ImportError:
+    logging.error("python-dateutil library not found. Please install it: pip install python-dateutil")
+    dateutil_parser = None
+    ParserError = Exception
 
 logger = logging.getLogger(__name__)
 
 class SpecificJsonParser(Parser):
     """
-    Parses JSON files expecting a specific structure:
+    Parses JSON files expecting a specific structure.
+    Converts the 'updatedate' field to ISO 8601 UTC format for Edm.DateTimeOffset.
     {
-        "content": "Text content to be indexed...",
-        "url": "URL or path to the original file..."
-        "updatedate": "Date string..."
+      "value": [
+        {
+          "content": "Text content to be indexed...",
+          "url": "URL or path to the original file...",
+          "updatedate": "Date string in various formats..."
+        }
+      ]
     }
     - 'content' becomes the text of a single Page object.
-    - 'url' is stored in Page metadata mapped to `metadata_field_name` (e.g., 'sourcefile').
-    - 'updatedate' is stored in Page metadata mapped to 'updatedate'.
-    Yields a single Page object.
+    - 'url' is stored in Page metadata mapped to `metadata_field_name`.
+    - 'updatedate' is parsed, converted to UTC ISO 8601 format, and stored in Page metadata mapped to `updatedate_metadata_field`.
+    Yields a single Page object per item in the 'value' list.
     """
 
     def __init__(self, metadata_field_name: str = "sourcefile", updatedate_metadata_field: str = "updatedate"):
         self.metadata_field_name = metadata_field_name
         self.updatedate_metadata_field = updatedate_metadata_field
-        logger.info("SpecificJsonParser initialized to map JSON 'url' to '%s' and 'updatedate' to '%s'", self.metadata_field_name, self.updatedate_metadata_field)
+        logger.info("SpecificJsonParser initialized to map JSON 'url' to '%s' and 'updatedate' to '%s' (converting to ISO 8601 UTC)",
+                     self.metadata_field_name, self.updatedate_metadata_field)
+        if dateutil_parser is None:
+             logger.error("Date parsing disabled because 'python-dateutil' is not installed.")
 
     async def parse(self, content: IO[bytes], file_path: Optional[str] = None) -> AsyncGenerator[Page, None]:
         """
-        Parses the JSON content asynchronously.
+        Parses the JSON content asynchronously, handling date conversion.
 
         Args:
             content (IO[bytes]): A file-like object containing the JSON byte content.
             file_path (Optional[str]): The path/name of the file being parsed (for logging).
 
         Yields:
-            Page: A Page object containing the extracted text and metadata.
+            Page: A Page object containing the extracted text and metadata for each valid item.
 
         Raises:
-            ValueError: If the JSON is invalid, 'content' is missing/not a string,
-                        or other parsing errors occur.
+            ValueError: If the JSON is invalid or top-level structure is wrong.
         """
         filename_for_log = file_path or "unknown file"
         logger.debug("Parsing specific JSON structure from: %s", filename_for_log)
@@ -51,82 +66,105 @@ class SpecificJsonParser(Parser):
                 json_content_bytes = content.read()
                 data = await loop.run_in_executor(None, json.loads, json_content_bytes)
             except json.JSONDecodeError as e:
-                 raise ValueError(f"Invalid JSON structure in file {filename_for_log}: {e}") from e
+                raise ValueError(f"Invalid JSON structure in file {filename_for_log}: {e}") from e
             except Exception as e:
                 raise ValueError(f"Could not read or decode JSON file {filename_for_log}: {e}") from e
 
-            # --- Check 1: Top level must be a dictionary ---
+            # --- Basic Structure Checks ---
             if not isinstance(data, dict):
-                logger.error("JSON file '%s' did not parse into a dictionary (object). Parsed type: %s. Skipping.",
-                             filename_for_log, type(data).__name__)
+                logger.error("JSON file '%s' did not parse into a dictionary. Skipping.", filename_for_log)
                 return
-
-            # --- Check 2: Top level dictionary must have 'value' key ---
             value_list = data.get("value")
-            if value_list is None:
-                 logger.error("Required key 'value' not found in top-level JSON object in file '%s'. Skipping.", filename_for_log)
-                 return
-
-            # --- Check 3: 'value' must be a list ---
             if not isinstance(value_list, list):
-                 logger.error("Key 'value' in JSON file '%s' does not contain a list. Found type: %s. Skipping.",
-                              filename_for_log, type(value_list).__name__)
-                 return
-
-            # --- Check 4: The list under 'value' must not be empty ---
-            if not value_list: # Checks if the list is empty
-                 logger.warning("The list associated with key 'value' in JSON file '%s' is empty. Skipping.", filename_for_log)
-                 return
-
-            # --- Access the first (and only expected) item in the list ---
-            item_data = value_list[0]
-
-            # --- Check 5: The item in the list must be a dictionary ---
-            if not isinstance(item_data, dict):
-                logger.error("The first item in the 'value' list in file '%s' is not a dictionary (object). Found type: %s. Skipping.",
-                             filename_for_log, type(item_data).__name__)
+                logger.error("Key 'value' in JSON file '%s' is missing or not a list. Skipping.", filename_for_log)
                 return
-            
-            logger.debug("Keys found in item_data for file '%s': %s", filename_for_log, list(item_data.keys()))
-            text_content = item_data.get("content")
-            file_url = item_data.get("url")
-            update_date_val = item_data.get("updatedate")
+            if not value_list:
+                logger.warning("The list associated with key 'value' in JSON file '%s' is empty. Skipping.", filename_for_log)
+                return
 
-            if not isinstance(text_content, str) or not text_content.strip():
-                logger.error("'content' field is missing, empty, or not a string in JSON file: %s. Skipping.", filename_for_log)
-                return # Stop yielding if content is invalid
+            # --- Iterate through items in the 'value' list ---
+            for index, item_data in enumerate(value_list):
+                item_log_prefix = f"Item {index} in {filename_for_log}" # For clearer logging
 
-            page_metadata: Dict[str, Any] = {}
-            if isinstance(file_url, str) and file_url.strip():
-                page_metadata[self.metadata_field_name] = file_url
-                logger.debug("Extracted '%s': %s from %s", self.metadata_field_name, file_url, filename_for_log)
-            else:
-                logger.warning("'url' field is missing, empty, or not a string in JSON file: %s. Metadata '%s' will not be set.",
-                               filename_for_log, self.metadata_field_name)
-            
-            # --- ADD 'updatedate' METADATA ---
-            # Store as string for simplicity, assuming Edm.String in index.
-            # Add validation/conversion here if target type is Edm.DateTimeOffset  ## TODO
-            if isinstance(update_date_val, str) and update_date_val.strip():
-                page_metadata[self.updatedate_metadata_field] = update_date_val
-                logger.debug("Extracted '%s': %s from JSON 'updatedate' field in %s",
-                             self.updatedate_metadata_field, update_date_val, filename_for_log)
-            else:
-                 logger.warning("'updatedate' field is missing, empty, or not a string in JSON file: %s. Metadata '%s' will not be set.",
-                                filename_for_log, self.updatedate_metadata_field)
-                 
-            # Create *one* Page object (page_num=0, offset=0)
-            page = Page(
-                page_num=0,
-                offset=0,
-                text=text_content,
-                metadata=page_metadata  # Pass the extracted metadata
-            )
-            logger.debug("Yielding Page for %s with text length %d and metadata %s",
-                         filename_for_log, len(page.text), page.metadata)
-            yield page
+                if not isinstance(item_data, dict):
+                    logger.error("%s is not a dictionary (object). Skipping item.", item_log_prefix)
+                    continue
+
+                logger.debug("Processing %s. Keys found: %s", item_log_prefix, list(item_data.keys()))
+                text_content = item_data.get("content")
+                file_url = item_data.get("url")
+                update_date_val = item_data.get("updatedate") # Original date string
+
+                if not isinstance(text_content, str) or not text_content.strip():
+                    logger.error("'content' field is missing, empty, or not a string in %s. Skipping item.", item_log_prefix)
+                    continue
+
+                page_metadata: Dict[str, Any] = {}
+
+                # Process 'url'
+                if isinstance(file_url, str) and file_url.strip():
+                    page_metadata[self.metadata_field_name] = file_url
+                    logger.debug("Extracted '%s': %s from %s", self.metadata_field_name, file_url, item_log_prefix)
+                else:
+                    logger.warning("'url' field is missing/empty/not string in %s. Metadata '%s' will not be set.",
+                                   item_log_prefix, self.metadata_field_name)
+
+                # --- Process 'updatedate' with CONVERSION ---
+                if dateutil_parser and isinstance(update_date_val, str) and update_date_val.strip():
+                    try:
+                        # 1. Parse the date string using dateutil (handles many formats)
+                        dt_obj = dateutil_parser.parse(update_date_val)
+
+                        # 2. Ensure the datetime object is timezone-aware and in UTC
+                        if dt_obj.tzinfo is None or dt_obj.tzinfo.utcoffset(dt_obj) is None:
+                            # Input was naive (no timezone). Assume it's UTC.
+                            # If you know source is local time, you'd need to localize then convert.
+                            dt_utc = dt_obj.replace(tzinfo=timezone.utc)
+                            logger.debug("Parsed naive date '%s' as UTC for %s", update_date_val, item_log_prefix)
+                        else:
+                            # Input had timezone info. Convert it to UTC.
+                            dt_utc = dt_obj.astimezone(timezone.utc)
+                            logger.debug("Parsed timezone-aware date '%s' and converted to UTC for %s", update_date_val, item_log_prefix)
+
+                        # 3. Format to ISO 8601 with 'Z' specifier (required by Azure Search)
+                        # Use strftime for precise format control including 'Z'
+                        iso_date_string = dt_utc.strftime('%Y-%m-%dT%H:%M:%SZ')
+                        # If you need millisecond precision:
+                        # iso_date_string = dt_utc.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + 'Z'
+
+                        page_metadata[self.updatedate_metadata_field] = iso_date_string
+                        logger.debug("Stored '%s': %s (converted from '%s') for %s",
+                                     self.updatedate_metadata_field, iso_date_string, update_date_val, item_log_prefix)
+
+                    except (ParserError, ValueError, OverflowError) as e:
+                        # Log error if parsing fails
+                        logger.warning("Could not parse 'updatedate' string '%s' into a valid datetime object in %s: %s. Metadata '%s' will not be set.",
+                                       update_date_val, item_log_prefix, e, self.updatedate_metadata_field)
+                    except Exception as e:
+                        # Catch unexpected errors during date processing
+                         logger.exception("Unexpected error processing 'updatedate' string '%s' in %s. Metadata '%s' will not be set.",
+                                       update_date_val, item_log_prefix, self.updatedate_metadata_field)
+
+                elif not dateutil_parser:
+                     logger.warning("'python-dateutil' not installed, cannot parse 'updatedate' field '%s' in %s. Metadata '%s' will not be set.",
+                                     update_date_val, item_log_prefix, self.updatedate_metadata_field)
+                else:
+                    # Handle cases where 'updatedate' is missing, empty, or not a string
+                    logger.warning("'updatedate' field is missing, empty, or not a string ('%s') in %s. Metadata '%s' will not be set.",
+                                   update_date_val, item_log_prefix, self.updatedate_metadata_field)
+
+                # Create Page object for this item
+                page = Page(
+                    page_num=index, # Use index as page number
+                    offset=0,
+                    text=text_content,
+                    metadata=page_metadata
+                )
+                logger.debug("Yielding Page %d for %s", index, item_log_prefix)
+                yield page
 
         except ValueError as e:
+             # Catches JSON structure errors raised earlier
              logger.error("Value error while parsing JSON %s: %s", filename_for_log, e)
              raise # Re-raise specific value errors
         except Exception as e:

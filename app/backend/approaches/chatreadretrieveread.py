@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Coroutine, List, Literal, Optional, Union, overload
 
 from azure.search.documents.aio import SearchClient
@@ -16,6 +17,9 @@ from approaches.chatapproach import ChatApproach
 from approaches.promptmanager import PromptManager
 from core.authentication import AuthenticationHelper
 
+logger = logging.getLogger(__name__)
+DEFAULT_TOP_VALUE = 3
+DEFAULT_TOP_FOR_DATE_SORT = 10 
 
 class ChatReadRetrieveReadApproach(ChatApproach):
     """
@@ -36,7 +40,9 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         embedding_model: str,
         embedding_dimensions: int,
         sourcepage_field: str,
+        sourcefile_field:str,
         content_field: str,
+        updatedate_field: str,
         query_language: str,
         query_speller: str,
         prompt_manager: PromptManager
@@ -50,7 +56,9 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         self.embedding_model = embedding_model
         self.embedding_dimensions = embedding_dimensions
         self.sourcepage_field = sourcepage_field
+        self.sourcefile_field = sourcefile_field
         self.content_field = content_field
+        self.updatedate_field = updatedate_field
         self.query_language = query_language
         self.query_speller = query_speller
         self.chatgpt_token_limit = get_token_limit(chatgpt_model, default_to_minimum=self.ALLOW_NON_GPT_MODELS)
@@ -77,6 +85,7 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         should_stream: Literal[True],
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, AsyncStream[ChatCompletionChunk]]]: ...
 
+
     async def run_until_final_call(
         self,
         messages: list[ChatCompletionMessageParam],
@@ -84,16 +93,15 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         auth_claims: dict[str, Any],
         should_stream: bool = False,
     ) -> tuple[dict[str, Any], Coroutine[Any, Any, Union[ChatCompletion, AsyncStream[ChatCompletionChunk]]]]:
+        use_semantic_ranker = bool(overrides.get("semantic_ranker"))
         seed = overrides.get("seed", None)
         use_text_search = overrides.get("retrieval_mode") in ["text", "hybrid", None]
         use_vector_search = overrides.get("retrieval_mode") in ["vectors", "hybrid", None]
-        use_semantic_ranker = True if overrides.get("semantic_ranker") else False
         use_semantic_captions = True if overrides.get("semantic_captions") else False
-        top = overrides.get("top", 3)
+        top = overrides.get("top")
         minimum_search_score = overrides.get("minimum_search_score", 0.0)
         minimum_reranker_score = overrides.get("minimum_reranker_score", 0.0)
         filter = self.build_filter(overrides, auth_claims)
-
         original_user_query = messages[-1]["content"]
         if not isinstance(original_user_query, str):
             raise ValueError("The most recent message content must be a string.")
@@ -134,19 +142,75 @@ class ChatReadRetrieveReadApproach(ChatApproach):
         # If retrieval mode includes vectors, compute an embedding for the query
         vectors: list[VectorQuery] = []
         if use_vector_search:
-            vectors.append(await self.compute_text_embedding(query_text))
+             if hasattr(self, 'compute_text_embedding'):
+                 vectors.append(await self.compute_text_embedding(query_text))
+             else:
+                 logger.warning("Vector search enabled but compute_text_embedding method not found.")
+                 use_vector_search = False
+
+        # --- Determine Sorting ---
+        order_by = None # Default: relevance sort
+        is_date_sort_active = False
+        if use_semantic_ranker:
+            logger.info("Semantic ranker enabled. Sorting will be by relevance (order_by=None).")
+            order_by = None
+        else:
+            # Semantic Ranker is OFF: Evaluate sort_by override
+            sort_override = overrides.get("sort_by") # This could be "relevance", "updatedate desc", "updatedate asc", or None
+            disable_default_date_sort = overrides.get("disable_default_date_sort", False)
+
+            if sort_override and sort_override != "relevance":
+                # User explicitly specified a sort order OTHER THAN "relevance"
+                order_by = sort_override
+                logger.info(f"Semantic ranker disabled. Using specified sort order: {order_by}")
+                # Check if the user's sort override uses the date field for 'top' adjustment logic
+                if self.updatedate_field and order_by.startswith(self.updatedate_field):
+                    is_date_sort_active = True
+            elif sort_override == "relevance":
+                # User explicitly requested relevance sort
+                logger.info("Sort explicitly set to 'relevance'. Using relevance sorting.")
+                order_by = None # Treat same as omitting the key
+            elif disable_default_date_sort:
+                # sort_override is None (key omitted), and user disabled default date sort
+                logger.info("Semantic ranker disabled. Default date sorting disabled by override. Using relevance sorting.")
+                order_by = None
+            elif self.updatedate_field:
+                # sort_override is None (key omitted), default date sort NOT disabled, and field exists
+                order_by = f"{self.updatedate_field} desc"
+                logger.info(f"Semantic ranker disabled. Using default date sort order: {order_by}")
+                is_date_sort_active = True # Default date sort is active
+            else:
+                # sort_override is None (key omitted), default date sort NOT disabled, but field doesn't exist
+                logger.warning("Semantic ranker disabled, but no updatedate_field configured. Using relevance sorting.")
+                order_by = None
+
+        # --- Determine Final 'top' Value ---
+        final_top: int
+        if is_date_sort_active and top is None:
+            # Use higher default top only if date sort is active AND user didn't specify a top value
+            final_top = DEFAULT_TOP_FOR_DATE_SORT
+            logger.info(f"Date sorting is active and no specific top override, using increased top value: {final_top}")
+        else:
+            # Use the user's requested top if provided, otherwise the standard default
+            final_top = top if top is not None else DEFAULT_TOP_VALUE
+            logger.info(f"Using top value: {final_top} (from override or standard default)")
+
+
+        if not hasattr(self, 'search'):
+             raise NotImplementedError("The 'search' method is not defined in this class or its base classes.")
 
         results = await self.search(
-            top,
-            query_text,
-            filter,
-            vectors,
-            use_text_search,
-            use_vector_search,
-            use_semantic_ranker,
-            use_semantic_captions,
-            minimum_search_score,
-            minimum_reranker_score,
+            top=final_top,
+            query_text=query_text,
+            filter=filter,
+            vectors=vectors,
+            use_text_search=use_text_search,
+            use_vector_search=use_vector_search,
+            use_semantic_ranker=use_semantic_ranker,
+            use_semantic_captions=use_semantic_captions,
+            minimum_search_score=minimum_search_score,
+            minimum_reranker_score=minimum_reranker_score,
+            order_by=order_by,
         )
 
         # STEP 3: Generate a contextual and content specific answer using the search results and chat history
@@ -194,7 +258,8 @@ class ChatReadRetrieveReadApproach(ChatApproach):
                     {
                         "use_semantic_captions": use_semantic_captions,
                         "use_semantic_ranker": use_semantic_ranker,
-                        "top": top,
+                        "top": final_top,
+                        "order_by": order_by,
                         "filter": filter,
                         "use_vector_search": use_vector_search,
                         "use_text_search": use_text_search,

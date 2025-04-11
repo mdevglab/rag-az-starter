@@ -34,6 +34,12 @@
     },
     "developerSettings": "Developer settings",
 
+    "sortOptions": {
+        "relevance": "Relevance",
+        "dateDesc": "Date: Newest First",
+        "dateAsc": "Date: Oldest First"
+    },
+
     "chatEmptyStateTitle": "Chat with your data",
     "chatEmptyStateSubtitle": "Ask anything or try an example",
     "defaultExamples": {
@@ -108,6 +114,7 @@
                 "texts": "Text"
             }
         },
+        "sortBy": "Sort By",
         "vector": {
             "label": "Vector fields (Multi-query vector search)",
             "options": {
@@ -150,6 +157,7 @@
         "retrievalMode":
             "Sets the retrieval mode for the Azure AI Search query. `Vectors + Text (Hybrid)` uses a combination of vector search and full text search, `Vectors` uses only vector search, and `Text` uses only full text search. Hybrid is generally optimal.",
         "streamChat": "Continuously streams the response to the chat UI as it is generated.",
+        "sortBy": "Determines the order of retrieved documents. Selecting a date sort will disable Semantic Ranker.",
         "useOidSecurityFilter": "Filter search results based on the authenticated user's OID.",
         "useGroupsSecurityFilter": "Filter search results based on the authenticated user's groups."
     }

@@ -450,6 +450,8 @@ async def setup_clients():
 
     KB_FIELDS_CONTENT = os.getenv("KB_FIELDS_CONTENT", "content")
     KB_FIELDS_SOURCEPAGE = os.getenv("KB_FIELDS_SOURCEPAGE", "sourcepage")
+    KB_FIELDS_UPDATEDATE = os.getenv("KB_FIELDS_UPDATEDATE", "updatedate")
+    KB_FIELDS_SOURCEFILE = os.getenv("KB_FIELDS_SOURCEFILE", "sourcefile")
 
     AZURE_SEARCH_QUERY_LANGUAGE = os.getenv("AZURE_SEARCH_QUERY_LANGUAGE") or "en-us"
     AZURE_SEARCH_QUERY_SPELLER = os.getenv("AZURE_SEARCH_QUERY_SPELLER") or "lexicon"
@@ -659,6 +661,7 @@ async def setup_clients():
         embedding_dimensions=AZURE_AI_EMBED_DIMENSIONS,
         sourcepage_field=KB_FIELDS_SOURCEPAGE,
         content_field=KB_FIELDS_CONTENT,
+        updatedate_field=KB_FIELDS_UPDATEDATE,
         query_language=AZURE_SEARCH_QUERY_LANGUAGE,
         query_speller=AZURE_SEARCH_QUERY_SPELLER,
         prompt_manager=prompt_manager,
@@ -676,6 +679,8 @@ async def setup_clients():
         embedding_dimensions=AZURE_AI_EMBED_DIMENSIONS,
         sourcepage_field=KB_FIELDS_SOURCEPAGE,
         content_field=KB_FIELDS_CONTENT,
+        updatedate_field=KB_FIELDS_UPDATEDATE,
+        sourcefile_field=KB_FIELDS_SOURCEFILE,
         query_language=AZURE_SEARCH_QUERY_LANGUAGE,
         query_speller=AZURE_SEARCH_QUERY_SPELLER,
         prompt_manager=prompt_manager,
@@ -756,6 +761,13 @@ def create_app():
     # Log levels should be one of https://docs.python.org/3/library/logging.html#logging-levels
     # Set root level to WARNING to avoid seeing overly verbose logs from SDKS
     logging.basicConfig(level=logging.WARNING)
+
+    # --- TEMPORARY CHANGE FOR DEBUGGING ---
+    # Set root level lower to see DEBUG messages from all modules
+    #logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    #print("--- LOGGING LEVEL SET TO DEBUG ---") # Add a print statement to confirm this runs
+    # --- END TEMPORARY CHANGE ---
+
     # Set our own logger levels to INFO by default
     app_level = os.getenv("APP_LOG_LEVEL", "INFO")
     app.logger.setLevel(os.getenv("APP_LOG_LEVEL", app_level))
